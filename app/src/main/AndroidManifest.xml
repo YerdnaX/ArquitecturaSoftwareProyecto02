@@ -27,6 +27,10 @@
             android:name=".procesos.ServicioFabricaRobots"
             android:exported="false"
             android:process=":fabrica_robots" />
+        <service
+            android:name=".restaurante.ServicioRestauranteIpc"
+            android:exported="false"
+            android:process=":cocina_restaurante" />
     </application>
 
 </manifest>
