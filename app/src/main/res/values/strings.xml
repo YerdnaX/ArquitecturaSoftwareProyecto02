@@ -1,3 +1,32 @@
 <resources>
-    <string name="app_name">Architecturas OS</string>
+    <string name="app_name">Android OS Playground</string>
+    <string name="titulo_panel_experimentos">Android OS Playground</string>
+    <string name="subtitulo_panel_experimentos">Experimentos interactivos de Sistemas Operativos en Android</string>
+    <string name="accion_abrir">Abrir</string>
+    <string name="accion_volver">Volver</string>
+    <string name="mensaje_modulo_construccion">Módulo en construcción</string>
+    <string name="experimento_fabrica_robots_nombre">Fábrica de Robots</string>
+    <string name="experimento_fabrica_robots_concepto">Procesos</string>
+    <string name="experimento_fabrica_robots_descripcion">Inicia un servicio en un proceso separado y compara los PID del proceso principal y secundario.</string>
+    <string name="experimento_restaurante_ipc_nombre">Restaurante IPC</string>
+    <string name="experimento_restaurante_ipc_concepto">Binder IPC</string>
+    <string name="experimento_restaurante_ipc_descripcion">Envía una orden entre procesos usando comunicación Binder y muestra la respuesta del servicio.</string>
+    <string name="experimento_red_agentes_nombre">Red de Agentes</string>
+    <string name="experimento_red_agentes_concepto">Sockets</string>
+    <string name="experimento_red_agentes_descripcion">Conecta un cliente y servidor TCP local para enviar mensajes mediante sockets reales.</string>
+    <string name="experimento_carrera_hilos_nombre">Carrera de Hilos</string>
+    <string name="experimento_carrera_hilos_concepto">Hilos</string>
+    <string name="experimento_carrera_hilos_descripcion">Ejecuta trabajo real con diferentes cantidades de hilos y compara tiempos de ejecución.</string>
+    <string name="experimento_banco_caotico_nombre">Banco Caótico</string>
+    <string name="experimento_banco_caotico_concepto">Condición de carrera</string>
+    <string name="experimento_banco_caotico_descripcion">Muestra cómo varios hilos modifican un valor compartido sin sincronización y producen resultados incorrectos.</string>
+    <string name="experimento_carrera_boletos_nombre">Carrera por Boletos</string>
+    <string name="experimento_carrera_boletos_concepto">Mutex</string>
+    <string name="experimento_carrera_boletos_descripcion">Compara el acceso a un recurso crítico con y sin protección mediante mutex.</string>
+    <string name="experimento_parqueo_inteligente_nombre">Parqueo Inteligente</string>
+    <string name="experimento_parqueo_inteligente_concepto">Semáforo</string>
+    <string name="experimento_parqueo_inteligente_descripcion">Controla cuántos vehículos pueden entrar al mismo tiempo usando un semáforo real.</string>
+    <string name="experimento_monstruo_memoria_nombre">Monstruo de Memoria</string>
+    <string name="experimento_monstruo_memoria_concepto">Memoria</string>
+    <string name="experimento_monstruo_memoria_descripcion">Reserva y libera memoria de forma controlada para observar cambios en el consumo de la app.</string>
 </resources>

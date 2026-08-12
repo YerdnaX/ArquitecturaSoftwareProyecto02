@@ -503,6 +503,12 @@ Evitar instalar librerias para problemas pequenos.
 
 ---
 
+## 21. Localizacion
+
+El app debe soportar localizacion, pero el lenguage por default sera Espanol.
+
+---
+
 ## 21. Que no hacer
 
 Evitar:
