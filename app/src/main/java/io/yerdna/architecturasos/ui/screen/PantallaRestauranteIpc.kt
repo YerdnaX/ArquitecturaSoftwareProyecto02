@@ -62,6 +62,7 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.launch
 
+// Pantalla principal del experimento de restaurante IPC: conecta el ViewModel y el controlador, y maneja los dialogos de salida y reinicio.
 @Composable
 fun PantallaRestauranteIpc(
     onVolver: () -> Unit
@@ -73,36 +74,44 @@ fun PantallaRestauranteIpc(
         ControladorRestauranteIpc(
             applicationContext = context,
             callbacks = object : ControladorRestauranteIpc.Callbacks {
+                // Notifica al ViewModel que la cocina se conecto exitosamente.
                 override fun onCocinaConectada(pidCocina: Int, timestamp: Long, mensajes: Int) {
                     viewModel.cocinaConectada(pidCocina, timestamp, mensajes)
                 }
 
+                // Notifica al ViewModel que una orden quedo en cola de espera.
                 override fun onOrdenEnCola(evento: EventoOrdenRestaurante) {
                     viewModel.marcarOrdenEnCola(evento)
                 }
 
+                // Notifica al ViewModel que la cocina recibio la orden.
                 override fun onOrdenRecibida(evento: EventoOrdenRestaurante) {
                     viewModel.marcarOrdenRecibida(evento)
                 }
 
+                // Notifica al ViewModel que la cocina esta procesando la orden.
                 override fun onOrdenProcesando(evento: EventoOrdenRestaurante) {
                     viewModel.marcarOrdenProcesando(evento)
                 }
 
+                // Notifica al ViewModel que se recibio la respuesta de la cocina.
                 override fun onRespuestaEnviada(evento: EventoOrdenRestaurante) {
                     viewModel.marcarRespuestaRecibida(evento)
                 }
 
+                // Registra la desconexion del servicio y actualiza el estado de la pantalla.
                 override fun onServicioDesconectado() {
                     registro.logger.advertencia("Servicio Restaurante IPC desconectado")
                     viewModel.marcarDesconectado()
                 }
 
+                // Registra el error de comunicacion y lo refleja en el estado de la pantalla.
                 override fun onError(mensaje: String, rompeConexion: Boolean, mensajes: Int) {
                     registro.logger.error(mensaje.ifBlank { "Error de comunicacion con la cocina" })
                     viewModel.marcarError(mensaje, rompeConexion, mensajes)
                 }
 
+                // Reenvia el evento recibido al registro de eventos del experimento.
                 override fun onEventoRegistro(evento: EventoExperimento) {
                     registro.logger.registrar(evento)
                 }
@@ -113,12 +122,14 @@ fun PantallaRestauranteIpc(
     var mostrarConfirmacionSalida by remember { mutableStateOf(false) }
     var mostrarConfirmacionReinicio by remember { mutableStateOf(false) }
 
+    // Desconecta el controlador y marca el estado de la pantalla como desconectado.
     fun desconectar(cancelado: Boolean) {
         registro.logger.info("Desconexion solicitada por el usuario")
         controlador.desconectar()
         viewModel.marcarDesconectado(cancelado = cancelado)
     }
 
+    // Pide confirmacion antes de salir si hay conexion o trabajo pendiente; si no, vuelve directamente.
     fun solicitarSalida() {
         if (viewModel.hayConexionActiva() || viewModel.hayTrabajoPendiente()) {
             mostrarConfirmacionSalida = true
@@ -127,6 +138,7 @@ fun PantallaRestauranteIpc(
         }
     }
 
+    // Pide confirmacion antes de reiniciar si hay conexion o trabajo pendiente; si no, limpia los datos directamente.
     fun solicitarReinicio() {
         if (viewModel.hayConexionActiva() || viewModel.hayTrabajoPendiente()) {
             mostrarConfirmacionReinicio = true
@@ -207,6 +219,7 @@ fun PantallaRestauranteIpc(
     )
 }
 
+// Arma el scaffold de la pantalla con los controles, la visualizacion, el resultado y la ayuda de verificacion.
 @Composable
 private fun ContenidoRestauranteIpc(
     estado: EstadoRestauranteIpc,
@@ -273,6 +286,7 @@ private fun ContenidoRestauranteIpc(
     }
 }
 
+// Muestra los botones de conectar, desconectar y reiniciar junto al campo de texto para escribir la orden.
 @Composable
 private fun ControlesRestaurante(
     estado: EstadoRestauranteIpc,
@@ -342,6 +356,7 @@ private fun ControlesRestaurante(
     }
 }
 
+// Boton que llena rapidamente el campo de orden con un texto predefinido.
 @Composable
 private fun OrdenRapidaButton(
     textoResId: Int,
@@ -353,6 +368,7 @@ private fun OrdenRapidaButton(
     }
 }
 
+// Dibuja el recorrido visual de la orden entre el mesero y la cocina.
 @Composable
 private fun VisualizacionRestaurante(estado: EstadoRestauranteIpc) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -387,6 +403,7 @@ private fun VisualizacionRestaurante(estado: EstadoRestauranteIpc) {
     }
 }
 
+// Tarjeta que muestra el nombre, el PID y el estado de un actor del restaurante (mesero o cocina).
 @Composable
 private fun BloqueRestaurante(
     nombre: String,
@@ -428,6 +445,7 @@ private fun BloqueRestaurante(
     }
 }
 
+// Sección con los datos detallados del resultado de la última ejecución del experimento.
 @Composable
 private fun ResultadoRestaurante(estado: EstadoRestauranteIpc) {
     SeccionRestaurante(titulo = stringResource(R.string.resultado_ultima_ejecucion)) {
@@ -477,6 +495,7 @@ private fun ResultadoRestaurante(estado: EstadoRestauranteIpc) {
     }
 }
 
+// Sección con los comandos adb para verificar el experimento, con botón para copiarlos al portapapeles.
 @Composable
 private fun ComoVerificarRestaurante() {
     val clipboard = LocalClipboard.current
@@ -539,6 +558,7 @@ private data class ComandoVerificacionRestaurante(
     val descripcionResId: Int
 )
 
+// Contenedor genérico con un título y el contenido que se le pase.
 @Composable
 private fun SeccionRestaurante(
     titulo: String,
@@ -556,6 +576,7 @@ private fun SeccionRestaurante(
     }
 }
 
+// Fila que muestra una etiqueta junto a su valor correspondiente.
 @Composable
 private fun DatoRestaurante(
     etiqueta: String,
@@ -582,6 +603,7 @@ private fun DatoRestaurante(
     }
 }
 
+// Diálogo de confirmación para salir de la pantalla, desconectando la cocina.
 @Composable
 private fun DialogoSalidaRestaurante(
     onConfirmar: () -> Unit,
@@ -604,6 +626,7 @@ private fun DialogoSalidaRestaurante(
     )
 }
 
+// Diálogo de confirmación para reiniciar el experimento.
 @Composable
 private fun DialogoReinicioRestaurante(
     onConfirmar: () -> Unit,
@@ -626,6 +649,7 @@ private fun DialogoReinicioRestaurante(
     )
 }
 
+// Traduce el estado de conexión a un texto legible para el usuario.
 @Composable
 private fun textoEstadoConexionRestaurante(estado: EstadoConexionRestaurante): String {
     return when (estado) {
@@ -636,6 +660,7 @@ private fun textoEstadoConexionRestaurante(estado: EstadoConexionRestaurante): S
     }
 }
 
+// Traduce el estado de la orden a un texto legible para el usuario.
 @Composable
 private fun textoEstadoOrdenRestaurante(estado: EstadoOrdenRestaurante): String {
     return when (estado) {
@@ -651,6 +676,7 @@ private fun textoEstadoOrdenRestaurante(estado: EstadoOrdenRestaurante): String 
     }
 }
 
+// Traduce el resultado de la última ejecución a un texto legible.
 @Composable
 private fun textoResultadoRestaurante(resultado: ResultadoRestauranteIpc): String {
     return when (resultado) {
@@ -661,6 +687,7 @@ private fun textoResultadoRestaurante(resultado: ResultadoRestauranteIpc): Strin
     }
 }
 
+// Devuelve el color asociado al estado de conexión actual.
 @Composable
 private fun colorEstadoConexionRestaurante(estado: EstadoConexionRestaurante): Color {
     return when (estado) {
@@ -671,6 +698,7 @@ private fun colorEstadoConexionRestaurante(estado: EstadoConexionRestaurante): C
     }
 }
 
+// Devuelve la flecha que indica la dirección del flujo de la orden según su estado.
 private fun textoFlechaRestaurante(estado: EstadoOrdenRestaurante): String {
     return when (estado) {
         EstadoOrdenRestaurante.PreparandoMensaje,
@@ -685,11 +713,13 @@ private fun textoFlechaRestaurante(estado: EstadoOrdenRestaurante): String {
     }
 }
 
+// Formatea un timestamp en hora legible (HH:mm:ss) o devuelve "--" si es nulo.
 private fun formatoHoraRestaurante(valor: Long?): String {
     if (valor == null) return "--"
     return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(valor))
 }
 
+// Vista previa de la pantalla en estado desconectado.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaRestauranteDesconectadoPreview() {
@@ -710,6 +740,7 @@ private fun PantallaRestauranteDesconectadoPreview() {
     }
 }
 
+// Vista previa de la pantalla con la cocina conectada.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaRestauranteConectadoPreview() {
@@ -733,6 +764,7 @@ private fun PantallaRestauranteConectadoPreview() {
     }
 }
 
+// Vista previa de la pantalla procesando una orden con otras en cola.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaRestauranteProcesandoConColaPreview() {
@@ -762,6 +794,7 @@ private fun PantallaRestauranteProcesandoConColaPreview() {
     }
 }
 
+// Vista previa de la pantalla en estado de error.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaRestauranteErrorPreview() {

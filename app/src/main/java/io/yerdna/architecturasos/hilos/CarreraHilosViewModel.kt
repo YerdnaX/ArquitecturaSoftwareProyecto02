@@ -29,17 +29,20 @@ class CarreraHilosViewModel : ViewModel() {
     private var ejecutor: EjecutorCarreraHilos? = null
     private var registrarEvento: ((EventoRegistroCarreraHilos) -> Unit)? = null
 
+    // Cambia la cantidad de hilos configurada y reinicia los progresos, si no hay una carrera en curso.
     fun actualizarCantidadHilos(cantidad: Int) {
         if (estado == EstadoCarreraHilos.Ejecutando) return
         configuracion = configuracion.copy(cantidadHilos = cantidad).normalizada()
         progresos = progresosIniciales(configuracion)
     }
 
+    // Cambia la cantidad de trabajo configurada para cada hilo, si no hay una carrera en curso.
     fun actualizarCantidadTrabajo(cantidad: Int) {
         if (estado == EstadoCarreraHilos.Ejecutando) return
         configuracion = configuracion.copy(cantidadTrabajo = cantidad).normalizada()
     }
 
+    // Inicia una nueva ejecución de la carrera de hilos y comienza a emitir eventos de registro.
     fun iniciar(onEvento: (EventoRegistroCarreraHilos) -> Unit) {
         if (!puedeIniciar()) return
 
@@ -58,6 +61,7 @@ class CarreraHilosViewModel : ViewModel() {
 
         ejecutor = EjecutorCarreraHilos(
             callbacks = object : EjecutorCarreraHilos.Callbacks {
+                // Reemplaza el progreso del hilo correspondiente en la lista con la información recibida.
                 override fun onHiloActualizado(idEjecucion: Int, progreso: ProgresoHiloCarrera) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     progresos = progresos.map {
@@ -65,6 +69,7 @@ class CarreraHilosViewModel : ViewModel() {
                     }
                 }
 
+                // Traduce los eventos internos de un hilo en eventos de registro para mostrar en la UI.
                 override fun onEvento(idEjecucion: Int, evento: EventoCarreraHilos) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     when (evento) {
@@ -82,6 +87,7 @@ class CarreraHilosViewModel : ViewModel() {
                     }
                 }
 
+                // Cierra la ejecución cuando todos los hilos terminan, forzando el estado de error si ocurrió uno.
                 override fun onFinalizada(idEjecucion: Int, resumen: ResumenEjecucionCarrera) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     val resumenFinal = if (estado == EstadoCarreraHilos.Error) {
@@ -92,6 +98,7 @@ class CarreraHilosViewModel : ViewModel() {
                     cerrarEjecucion(idEjecucion, resumenFinal)
                 }
 
+                // Cancela la ejecución completa y marca el estado como error cuando falla un hilo.
                 override fun onError(idEjecucion: Int, idHilo: Int, mensaje: String?, throwable: Throwable?) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     ejecutor?.cancelar()
@@ -103,11 +110,13 @@ class CarreraHilosViewModel : ViewModel() {
         ejecutor?.iniciar(idEjecucion, config)
     }
 
+    // Cancela la ejecución en curso, si la hay.
     fun cancelar() {
         if (estado != EstadoCarreraHilos.Ejecutando) return
         ejecutor?.cancelar()
     }
 
+    // Regresa el estado a inactivo y descarta los resultados de la última ejecución.
     fun reiniciar() {
         if (estado == EstadoCarreraHilos.Ejecutando) return
         estado = EstadoCarreraHilos.Inactiva
@@ -116,6 +125,7 @@ class CarreraHilosViewModel : ViewModel() {
         progresos = progresosIniciales(configuracion)
     }
 
+    // Cancela la ejecución activa y libera todas las referencias asociadas al ejecutor.
     fun limpiarRecursos() {
         ejecutor?.cancelar()
         ejecutor = null
@@ -123,6 +133,7 @@ class CarreraHilosViewModel : ViewModel() {
         registrarEvento = null
     }
 
+    // Indica si el estado actual permite iniciar una nueva ejecución.
     fun puedeIniciar(): Boolean {
         return estado == EstadoCarreraHilos.Inactiva ||
             estado == EstadoCarreraHilos.Exitosa ||
@@ -130,18 +141,22 @@ class CarreraHilosViewModel : ViewModel() {
             estado == EstadoCarreraHilos.Error
     }
 
+    // Indica si hay una ejecución en curso que se pueda cancelar.
     fun puedeCancelar(): Boolean {
         return estado == EstadoCarreraHilos.Ejecutando
     }
 
+    // Indica si el estado actual permite reiniciar la carrera.
     fun puedeReiniciar(): Boolean {
         return estado != EstadoCarreraHilos.Ejecutando
     }
 
+    // Indica si actualmente hay una ejecución en curso.
     fun hayEjecucionActiva(): Boolean {
         return estado == EstadoCarreraHilos.Ejecutando
     }
 
+    // Busca en el historial el mejor tiempo logrado con la misma cantidad de hilos configurada actualmente.
     fun mejorTiempoMismaCantidad(): Long? {
         return historial
             .filter {
@@ -151,6 +166,7 @@ class CarreraHilosViewModel : ViewModel() {
             .minOfOrNull { it.tiempoTotalMs }
     }
 
+    // Construye el resultado final de la ejecución a partir de los progresos y lo agrega al historial.
     private fun cerrarEjecucion(idEjecucion: Int, resumen: ResumenEjecucionCarrera) {
         val finalizados = progresos.count { it.estado == EstadoHiloCarrera.Finalizado }
         val cancelados = progresos.count { it.estado == EstadoHiloCarrera.Cancelado }
@@ -181,20 +197,24 @@ class CarreraHilosViewModel : ViewModel() {
         }
     }
 
+    // Envía un evento al callback de registro actual, si hay uno definido.
     private fun emitir(evento: EventoRegistroCarreraHilos) {
         registrarEvento?.invoke(evento)
     }
 
+    // Verifica si el id dado corresponde a la ejecución actualmente activa.
     private fun esEjecucionActiva(idEjecucion: Int): Boolean {
         return idEjecucionActiva == idEjecucion
     }
 
+    // Libera los recursos del ejecutor cuando el ViewModel se destruye.
     override fun onCleared() {
         limpiarRecursos()
         super.onCleared()
     }
 }
 
+// Genera la lista inicial de progresos, uno por cada hilo configurado, sin operaciones completadas.
 private fun progresosIniciales(configuracion: ConfiguracionCarreraHilos): List<ProgresoHiloCarrera> {
     val operaciones = operacionesPorHiloCarrera(configuracion.cantidadTrabajo)
     return (1..configuracion.cantidadHilos).map { id ->

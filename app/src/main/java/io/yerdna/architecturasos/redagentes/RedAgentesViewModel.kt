@@ -17,18 +17,21 @@ class RedAgentesViewModel : ViewModel() {
             textoMensaje.length <= MAX_CARACTERES_MENSAJE &&
             !textoMensaje.contains(TERMINADOR_MENSAJE)
 
+    // Actualiza el texto del mensaje quitando el terminador y recortandolo a la longitud maxima permitida
     fun actualizarMensaje(texto: String) {
         textoMensaje = texto
             .filter { it != TERMINADOR_MENSAJE }
             .take(MAX_CARACTERES_MENSAJE)
     }
 
+    // Reinicia el estado dejando al servidor marcado como iniciando
     fun prepararInicioServidor() {
         estado = EstadoRedAgentes(
             estadoServidor = EstadoServidorRedAgentes.Iniciando
         )
     }
 
+    // Cambia el estado del servidor, ignorando transiciones de error a detenido y limpiando el error si corresponde
     fun actualizarEstadoServidor(nuevoEstado: EstadoServidorRedAgentes) {
         if (estado.estadoServidor == EstadoServidorRedAgentes.Error &&
             nuevoEstado == EstadoServidorRedAgentes.Detenido
@@ -46,6 +49,7 @@ class RedAgentesViewModel : ViewModel() {
         )
     }
 
+    // Marca el servidor como escuchando en el puerto indicado y limpia cualquier error previo
     fun servidorEscuchando(puerto: Int) {
         estado = estado.copy(
             puerto = puerto,
@@ -54,6 +58,7 @@ class RedAgentesViewModel : ViewModel() {
         )
     }
 
+    // Valida el mensaje pendiente y, si es valido, deja el estado listo para iniciar el envio
     fun prepararEnvio(): String? {
         val mensaje = textoMensaje.trim()
         if (mensaje.isEmpty()) {
@@ -80,6 +85,7 @@ class RedAgentesViewModel : ViewModel() {
         return mensaje
     }
 
+    // Cambia el estado del envio y marca el resultado como cancelado si corresponde
     fun actualizarEstadoEnvio(nuevoEstado: EstadoEnvioRedAgentes) {
         estado = estado.copy(
             estadoEnvio = nuevoEstado,
@@ -91,6 +97,7 @@ class RedAgentesViewModel : ViewModel() {
         )
     }
 
+    // Guarda en el estado el mensaje recibido y la respuesta que el servidor genero
     fun mensajeProcesadoServidor(evento: EventoServidorRedAgentes) {
         estado = estado.copy(
             mensajeRecibidoServidor = evento.mensaje,
@@ -100,6 +107,7 @@ class RedAgentesViewModel : ViewModel() {
         )
     }
 
+    // Registra en el estado el resultado exitoso de un envio y vuelve el servidor a escuchando
     fun envioExitoso(resultado: ResultadoEnvioRedAgentes) {
         estado = estado.copy(
             estadoServidor = EstadoServidorRedAgentes.Escuchando,
@@ -113,6 +121,7 @@ class RedAgentesViewModel : ViewModel() {
         )
     }
 
+    // Marca el servidor como deteniendose y cancela el envio si habia uno en curso
     fun detenerServidor() {
         estado = estado.copy(
             estadoServidor = EstadoServidorRedAgentes.Deteniendo,
@@ -125,6 +134,7 @@ class RedAgentesViewModel : ViewModel() {
         )
     }
 
+    // Registra un error en el estado, marcando el envio y/o el servidor segun corresponda
     fun marcarError(codigo: CodigoErrorRedAgentes) {
         estado = estado.copy(
             estadoEnvio = if (estado.hayEnvioActivo) EstadoEnvioRedAgentes.Error else estado.estadoEnvio,
@@ -138,22 +148,26 @@ class RedAgentesViewModel : ViewModel() {
         )
     }
 
+    // Indica si hay un servidor o un envio activos en este momento
     fun hayRecursosActivos(): Boolean {
         return estado.hayServidorActivo || estado.hayEnvioActivo
     }
 
+    // Indica si el servidor esta en condiciones de iniciarse
     fun puedeIniciarServidor(): Boolean {
         return estado.estadoServidor == EstadoServidorRedAgentes.Inactivo ||
             estado.estadoServidor == EstadoServidorRedAgentes.Detenido ||
             estado.estadoServidor == EstadoServidorRedAgentes.Error
     }
 
+    // Indica si es posible enviar un mensaje en el estado actual
     fun puedeEnviar(): Boolean {
         return estado.estadoServidor == EstadoServidorRedAgentes.Escuchando &&
             !estado.hayEnvioActivo &&
             mensajeValido
     }
 
+    // Indica si el servidor puede detenerse en el estado actual
     fun puedeDetener(): Boolean {
         return estado.estadoServidor == EstadoServidorRedAgentes.Iniciando ||
             estado.estadoServidor == EstadoServidorRedAgentes.Escuchando ||

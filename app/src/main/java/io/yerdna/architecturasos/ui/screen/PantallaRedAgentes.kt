@@ -68,6 +68,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+// Pantalla principal del experimento de red de agentes: arma el controlador, maneja la salida y muestra el contenido
 @Composable
 fun PantallaRedAgentes(
     onVolver: () -> Unit
@@ -77,31 +78,38 @@ fun PantallaRedAgentes(
     val controlador = remember {
         ControladorRedAgentes(
             callbacks = object : ControladorRedAgentes.Callbacks {
+                // Actualiza el estado del servidor en el viewModel cuando el controlador lo reporta
                 override fun onEstadoServidor(estado: EstadoServidorRedAgentes) {
                     viewModel.actualizarEstadoServidor(estado)
                 }
 
+                // Informa al viewModel que el servidor ya quedo escuchando en el puerto indicado
                 override fun onServidorEscuchando(puerto: Int) {
                     viewModel.servidorEscuchando(puerto)
                 }
 
+                // Actualiza el estado del envio del mensaje en el viewModel
                 override fun onEstadoEnvio(estado: EstadoEnvioRedAgentes) {
                     viewModel.actualizarEstadoEnvio(estado)
                 }
 
+                // Notifica al viewModel que el servidor termino de procesar el mensaje recibido
                 override fun onMensajeProcesadoServidor(evento: EventoServidorRedAgentes) {
                     viewModel.mensajeProcesadoServidor(evento)
                 }
 
+                // Notifica al viewModel que el envio del mensaje se completo con exito
                 override fun onEnvioExitoso(resultado: ResultadoEnvioRedAgentes) {
                     viewModel.envioExitoso(resultado)
                 }
 
+                // Registra el error en el log y lo marca en el viewModel
                 override fun onError(codigo: CodigoErrorRedAgentes, throwable: Throwable?) {
                     registro.logger.error("Error Red de Agentes: $codigo", throwable)
                     viewModel.marcarError(codigo)
                 }
 
+                // Reenvia el evento al logger del registro de experimento
                 override fun onEventoRegistro(evento: EventoExperimento) {
                     registro.logger.registrar(evento)
                 }
@@ -111,11 +119,13 @@ fun PantallaRedAgentes(
 
     var mostrarConfirmacionSalida by remember { mutableStateOf(false) }
 
+    // Detiene el servidor y libera los recursos del controlador
     fun detener() {
         viewModel.detenerServidor()
         controlador.detener()
     }
 
+    // Pide confirmacion antes de salir si hay recursos activos, o vuelve directo si no
     fun solicitarSalida() {
         if (viewModel.hayRecursosActivos()) {
             mostrarConfirmacionSalida = true
@@ -178,6 +188,7 @@ fun PantallaRedAgentes(
     )
 }
 
+// Arma el scaffold del experimento con la lista de secciones (controles, visualizacion, resultado y verificacion)
 @Composable
 private fun ContenidoRedAgentes(
     estado: EstadoRedAgentes,
@@ -244,6 +255,7 @@ private fun ContenidoRedAgentes(
     }
 }
 
+// Muestra los botones de iniciar/detener servidor y el campo para escribir y enviar el mensaje
 @Composable
 private fun ControlesRedAgentes(
     estado: EstadoRedAgentes,
@@ -303,6 +315,7 @@ private fun ControlesRedAgentes(
     }
 }
 
+// Muestra el recorrido visual del mensaje entre el agente y la central con su estado actual
 @Composable
 private fun VisualizacionRedAgentes(estado: EstadoRedAgentes) {
     SeccionRedAgentes(titulo = stringResource(R.string.red_agentes_recorrido)) {
@@ -340,6 +353,7 @@ private fun VisualizacionRedAgentes(estado: EstadoRedAgentes) {
     }
 }
 
+// Muestra una tarjeta con el nombre y el estado de un nodo (agente o central) con su color correspondiente
 @Composable
 private fun BloqueRedAgentes(
     nombre: String,
@@ -374,6 +388,7 @@ private fun BloqueRedAgentes(
     }
 }
 
+// Muestra la tarjeta con el detalle de los datos de la ultima ejecucion del experimento
 @Composable
 private fun ResultadoRedAgentes(estado: EstadoRedAgentes) {
     SeccionRedAgentes(titulo = stringResource(R.string.resultado_ultima_ejecucion)) {
@@ -441,6 +456,7 @@ private fun ResultadoRedAgentes(estado: EstadoRedAgentes) {
     }
 }
 
+// Muestra los comandos adb para verificar manualmente el experimento y permite copiarlos al portapapeles
 @Composable
 private fun ComoVerificarRedAgentes(estado: EstadoRedAgentes) {
     val clipboard = LocalClipboard.current
@@ -504,6 +520,7 @@ private data class ComandoVerificacionRedAgentes(
     val descripcionResId: Int
 )
 
+// Contenedor generico que muestra un titulo de seccion seguido de su contenido
 @Composable
 private fun SeccionRedAgentes(
     titulo: String,
@@ -521,6 +538,7 @@ private fun SeccionRedAgentes(
     }
 }
 
+// Muestra una fila con una etiqueta y su valor correspondiente
 @Composable
 private fun DatoRedAgentes(
     etiqueta: String,
@@ -547,6 +565,7 @@ private fun DatoRedAgentes(
     }
 }
 
+// Muestra el dialogo de confirmacion para salir cerrando los sockets activos
 @Composable
 private fun DialogoSalidaRedAgentes(
     onConfirmar: () -> Unit,
@@ -569,6 +588,7 @@ private fun DialogoSalidaRedAgentes(
     )
 }
 
+// Devuelve el texto legible correspondiente al estado del servidor
 @Composable
 private fun textoEstadoServidor(estado: EstadoServidorRedAgentes): String {
     return when (estado) {
@@ -582,6 +602,7 @@ private fun textoEstadoServidor(estado: EstadoServidorRedAgentes): String {
     }
 }
 
+// Devuelve el texto legible correspondiente al estado del envio
 @Composable
 private fun textoEstadoEnvio(estado: EstadoEnvioRedAgentes): String {
     return when (estado) {
@@ -595,6 +616,7 @@ private fun textoEstadoEnvio(estado: EstadoEnvioRedAgentes): String {
     }
 }
 
+// Devuelve el texto legible correspondiente al resultado de la ultima ejecucion
 @Composable
 private fun textoResultado(resultado: ResultadoRedAgentes): String {
     return when (resultado) {
@@ -605,6 +627,7 @@ private fun textoResultado(resultado: ResultadoRedAgentes): String {
     }
 }
 
+// Devuelve el texto legible correspondiente al codigo de error
 @Composable
 private fun textoCodigoError(codigo: CodigoErrorRedAgentes): String {
     return when (codigo) {
@@ -619,6 +642,7 @@ private fun textoCodigoError(codigo: CodigoErrorRedAgentes): String {
     }
 }
 
+// Devuelve el color asociado al estado del servidor
 @Composable
 private fun colorEstadoServidor(estado: EstadoServidorRedAgentes): Color {
     return when (estado) {
@@ -632,6 +656,7 @@ private fun colorEstadoServidor(estado: EstadoServidorRedAgentes): Color {
     }
 }
 
+// Devuelve el color asociado al estado del envio
 @Composable
 private fun colorEstadoEnvio(estado: EstadoEnvioRedAgentes): Color {
     return when (estado) {
@@ -645,6 +670,7 @@ private fun colorEstadoEnvio(estado: EstadoEnvioRedAgentes): Color {
     }
 }
 
+// Devuelve el texto que describe el paso actual del recorrido del mensaje
 @Composable
 private fun textoRecorrido(estado: EstadoEnvioRedAgentes): String {
     return when (estado) {
@@ -658,16 +684,19 @@ private fun textoRecorrido(estado: EstadoEnvioRedAgentes): String {
     }
 }
 
+// Devuelve el valor recibido o un marcador de no disponible si esta vacio
 @Composable
 private fun valorOMarcador(valor: String): String {
     return valor.ifBlank { stringResource(R.string.valor_no_disponible) }
 }
 
+// Formatea la marca de tiempo de conexion en horas, minutos y segundos
 private fun formatoHoraRedAgentes(valor: Long?): String {
     if (valor == null) return "--"
     return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(valor))
 }
 
+// Preview del contenido en su estado inicial, listo para iniciar el servidor
 @Preview(showBackground = true)
 @Composable
 private fun PantallaRedAgentesInicialPreview() {
@@ -688,6 +717,7 @@ private fun PantallaRedAgentesInicialPreview() {
     }
 }
 
+// Preview del contenido con el servidor escuchando y listo para enviar un mensaje
 @Preview(showBackground = true)
 @Composable
 private fun PantallaRedAgentesEscuchandoPreview() {
@@ -711,6 +741,7 @@ private fun PantallaRedAgentesEscuchandoPreview() {
     }
 }
 
+// Preview del contenido mostrando un estado de error en servidor y envio
 @Preview(showBackground = true)
 @Composable
 private fun PantallaRedAgentesErrorPreview() {

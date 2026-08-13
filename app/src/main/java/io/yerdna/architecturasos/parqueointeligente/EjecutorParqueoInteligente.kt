@@ -14,11 +14,17 @@ class EjecutorParqueoInteligente(
     private val callbacks: Callbacks
 ) {
     interface Callbacks {
+        // Notifica que el estado de un vehiculo cambio durante la ejecucion
         fun onVehiculoActualizado(idEjecucion: Int, vehiculo: VehiculoParqueoInteligente)
+        // Notifica que las metricas globales de la ejecucion se actualizaron
         fun onMetricasActualizadas(idEjecucion: Int, metricas: MetricasParqueoInteligente)
+        // Notifica un nuevo evento de registro producido durante la ejecucion
         fun onEvento(idEjecucion: Int, evento: EventoRegistroParqueoInteligente)
+        // Notifica que la ejecucion termino con exito e informa el resultado final
         fun onFinalizada(idEjecucion: Int, resultado: ResultadoParqueoInteligente)
+        // Notifica que la ejecucion fue cancelada
         fun onCancelada(idEjecucion: Int)
+        // Notifica que ocurrio un error tecnico durante la ejecucion
         fun onError(idEjecucion: Int, mensaje: String?, throwable: Throwable?)
     }
 
@@ -27,6 +33,7 @@ class EjecutorParqueoInteligente(
     private var executorService: ExecutorService? = null
     private var coordinador: Thread? = null
 
+    // Arranca una nueva ejecucion de la simulacion de parqueo con un vehiculo por hilo compitiendo por permisos del semaforo
     fun iniciar(
         idEjecucion: Int,
         configuracion: ConfiguracionParqueoInteligente
@@ -108,12 +115,14 @@ class EjecutorParqueoInteligente(
         coordinador?.start()
     }
 
+    // Marca la ejecucion como cancelada e interrumpe el pool de hilos y el coordinador
     fun cancelar() {
         cancelada.set(true)
         executorService?.shutdownNow()
         coordinador?.interrupt()
     }
 
+    // Cancela la ejecucion en curso y espera a que los recursos se liberen antes de descartarlos
     fun limpiar() {
         cancelar()
         val pool = executorService
@@ -128,6 +137,7 @@ class EjecutorParqueoInteligente(
         executorService = null
     }
 
+    // Simula el ciclo de vida completo de un vehiculo: esperar, adquirir permiso, entrar, estacionarse y salir
     private fun ejecutarVehiculo(
         idEjecucion: Int,
         idVehiculo: Int,
@@ -229,10 +239,12 @@ class EjecutorParqueoInteligente(
         }
     }
 
+    // Actualiza el maximo de vehiculos simultaneos registrado si el valor actual lo supera
     private fun actualizarMaximo(maximoSimultaneos: AtomicInteger, valorActual: Int) {
         maximoSimultaneos.updateAndGet { maxOf(it, valorActual) }
     }
 
+    // Construye el estado actualizado de un vehiculo y lo publica en el hilo principal via callback
     private fun publicarVehiculo(
         idEjecucion: Int,
         idVehiculo: Int,
@@ -263,10 +275,12 @@ class EjecutorParqueoInteligente(
         }
     }
 
+    // Publica un evento de registro en el hilo principal via callback
     private fun publicarEvento(idEjecucion: Int, evento: EventoRegistroParqueoInteligente) {
         publicar { callbacks.onEvento(idEjecucion, evento) }
     }
 
+    // Construye una foto de las metricas actuales y la publica en el hilo principal via callback
     private fun publicarMetricas(
         idEjecucion: Int,
         config: ConfiguracionParqueoInteligente,
@@ -297,6 +311,7 @@ class EjecutorParqueoInteligente(
         }
     }
 
+    // Ejecuta la accion en el hilo principal, directamente si ya esta en el o encolandola en el handler
     private fun publicar(accion: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             accion()

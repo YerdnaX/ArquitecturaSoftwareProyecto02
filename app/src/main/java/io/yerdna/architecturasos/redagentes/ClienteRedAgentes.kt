@@ -5,6 +5,7 @@ import java.io.InterruptedIOException
 import java.net.Socket
 
 class ClienteRedAgentes {
+    // Abre una conexion con el servidor, envia el mensaje y espera la respuesta midiendo el tiempo transcurrido
     fun enviarMensaje(host: String, puerto: Int, mensaje: String): ResultadoEnvioRedAgentes {
         val inicio = System.currentTimeMillis()
 
@@ -33,6 +34,7 @@ class ClienteRedAgentes {
         }
     }
 
+    // Lee byte a byte del socket hasta encontrar el terminador del mensaje o exceder el limite permitido
     private fun leerRespuesta(socket: Socket): LecturaMensaje {
         val buffer = ByteArrayOutputStream()
         val input = socket.getInputStream()

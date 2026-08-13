@@ -36,6 +36,7 @@ import io.yerdna.architecturasos.hilos.ProgresoHiloCarrera
 import io.yerdna.architecturasos.hilos.ResultadoCarreraHilos
 import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
 
+// Muestra los botones para elegir la cantidad de hilos (1, 2, 4 u 8) que participaran en la carrera.
 @Composable
 fun SelectorCantidadHilos(
     cantidadSeleccionada: Int,
@@ -67,6 +68,7 @@ fun SelectorCantidadHilos(
     }
 }
 
+// Muestra los botones para elegir el nivel de trabajo (1 a 5) que realizara cada hilo.
 @Composable
 fun ControlCantidadTrabajo(
     cantidadSeleccionada: Int,
@@ -105,6 +107,7 @@ fun ControlCantidadTrabajo(
     }
 }
 
+// Renderiza una tarjeta con el progreso, estado y operaciones completadas de un hilo de la carrera.
 @Composable
 fun FilaProgresoHilo(
     progreso: ProgresoHiloCarrera,
@@ -167,6 +170,7 @@ fun FilaProgresoHilo(
     }
 }
 
+// Muestra el panel con las metricas generales de la carrera de hilos: estado, tiempos e hilos finalizados o cancelados.
 @Composable
 fun PanelMetricasCarrera(
     configuracion: ConfiguracionCarreraHilos,
@@ -214,6 +218,7 @@ fun PanelMetricasCarrera(
     }
 }
 
+// Muestra el resultado de la ultima ejecucion de la carrera de hilos, o un mensaje si aun no se ha ejecutado.
 @Composable
 fun ResultadoCarrera(
     resultado: ResultadoCarreraHilos?,
@@ -251,6 +256,7 @@ fun ResultadoCarrera(
     }
 }
 
+// Muestra las ultimas cinco ejecuciones de la carrera de hilos en forma de tarjetas de historial.
 @Composable
 fun TablaHistorialCarrera(
     historial: List<ResultadoCarreraHilos>,
@@ -300,6 +306,7 @@ fun TablaHistorialCarrera(
     }
 }
 
+// Muestra el mejor tiempo obtenido en el historial para cada cantidad de hilos evaluada.
 @Composable
 fun ComparacionCarrera(
     historial: List<ResultadoCarreraHilos>
@@ -322,6 +329,7 @@ fun ComparacionCarrera(
     }
 }
 
+// Envuelve un bloque de contenido con un titulo de seccion, usado como contenedor comun en las pantallas de carrera.
 @Composable
 fun SeccionCarrera(
     titulo: String,
@@ -339,6 +347,7 @@ fun SeccionCarrera(
     }
 }
 
+// Muestra una fila con una etiqueta a la izquierda y su valor correspondiente a la derecha.
 @Composable
 fun DatoCarrera(
     etiqueta: String,
@@ -365,6 +374,7 @@ fun DatoCarrera(
     }
 }
 
+// Vista previa de una fila de progreso de un hilo en ejecucion.
 @Preview(showBackground = true)
 @Composable
 private fun FilaProgresoHiloPreview() {

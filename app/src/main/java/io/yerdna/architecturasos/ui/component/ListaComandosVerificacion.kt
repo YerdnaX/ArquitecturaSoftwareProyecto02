@@ -21,6 +21,7 @@ import io.yerdna.architecturasos.R
 import io.yerdna.architecturasos.diagnostico.ComandoDiagnostico
 import kotlinx.coroutines.launch
 
+// Lista los comandos de verificacion de una herramienta de diagnostico, con descripcion, cuando ejecutarlos y como interpretarlos.
 @Composable
 fun ListaComandosVerificacion(
     comandos: List<ComandoDiagnostico>

@@ -45,13 +45,21 @@ class ControladorRestauranteIpc(
     private val callbacks: Callbacks
 ) {
     interface Callbacks {
+        // Notifica que la cocina se conecto, con su pid y cuantos mensajes se han intercambiado
         fun onCocinaConectada(pidCocina: Int, timestamp: Long, mensajes: Int)
+        // Notifica que una orden quedo en cola de espera
         fun onOrdenEnCola(evento: EventoOrdenRestaurante)
+        // Notifica que la cocina recibio una orden
         fun onOrdenRecibida(evento: EventoOrdenRestaurante)
+        // Notifica que la cocina esta procesando una orden
         fun onOrdenProcesando(evento: EventoOrdenRestaurante)
+        // Notifica que la respuesta de una orden fue enviada de vuelta
         fun onRespuestaEnviada(evento: EventoOrdenRestaurante)
+        // Notifica que el servicio de la cocina se desconecto
         fun onServicioDesconectado()
+        // Notifica un error, indicando si rompe la conexion y cuantos mensajes se llevan intercambiados
         fun onError(mensaje: String, rompeConexion: Boolean, mensajes: Int)
+        // Notifica un nuevo evento de registro para mostrar en el log
         fun onEventoRegistro(evento: EventoExperimento)
     }
 
@@ -63,6 +71,7 @@ class ControladorRestauranteIpc(
     private var liberado = true
 
     private val conexion = object : ServiceConnection {
+        // Guarda el messenger del servicio al enlazarse y envia el registro del cliente
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             enlazado = true
             liberado = false
@@ -71,6 +80,7 @@ class ControladorRestauranteIpc(
             enviarRegistroCliente()
         }
 
+        // Limpia la referencia al servicio y notifica la desconexion
         override fun onServiceDisconnected(name: ComponentName?) {
             enlazado = false
             messengerServicio = null
@@ -78,6 +88,7 @@ class ControladorRestauranteIpc(
         }
     }
 
+    // Inicia y enlaza el servicio de la cocina si aun no hay una conexion activa
     fun conectar() {
         if (enlazado || messengerServicio != null) return
         liberado = false
@@ -91,6 +102,7 @@ class ControladorRestauranteIpc(
         }
     }
 
+    // Empaqueta y envia una orden al servicio de la cocina a traves del messenger
     fun enviarOrden(orden: String, idOrden: Int, pidOrigen: Int) {
         val destino = messengerServicio
         if (destino == null) {
@@ -118,29 +130,35 @@ class ControladorRestauranteIpc(
         }
     }
 
+    // Avisa al servicio que el cliente se desconecta y libera la conexion, deteniendo el servicio
     fun desconectar() {
         enviarDesconexionSiDisponible()
         liberar(detenerServicio = true)
     }
 
+    // Desconecta la conexion actual y ejecuta la accion de reconexion indicada
     fun reiniciar(onReconectar: () -> Unit) {
         desconectar()
         onReconectar()
     }
 
+    // Libera la conexion actual deteniendo tambien el servicio
     fun liberar() {
         liberar(detenerServicio = true)
     }
 
+    // Envia el mensaje de registro del cliente hacia el servicio
     private fun enviarRegistroCliente() {
         enviarMensaje(MSG_REGISTRAR_CLIENTE) { replyTo = messengerCliente }
     }
 
+    // Envia el mensaje de desconexion del cliente si aun hay un servicio disponible
     private fun enviarDesconexionSiDisponible() {
         if (messengerServicio == null) return
         enviarMensaje(MSG_DESCONECTAR_CLIENTE) { replyTo = messengerCliente }
     }
 
+    // Construye y envia un mensaje del tipo indicado al servicio, aplicando configuracion adicional
     private fun enviarMensaje(tipo: Int, configurar: Message.() -> Unit = {}) {
         val destino = messengerServicio ?: return
         try {
@@ -151,6 +169,7 @@ class ControladorRestauranteIpc(
         }
     }
 
+    // Desenlaza el servicio, limpia el estado interno y opcionalmente lo detiene
     private fun liberar(detenerServicio: Boolean) {
         if (liberado) return
         liberado = true
@@ -172,6 +191,7 @@ class ControladorRestauranteIpc(
         }
     }
 
+    // Construye un evento de registro con el tipo y mensaje dados y lo reporta a los callbacks
     private fun registrarEvento(tipo: TipoEvento, mensaje: String) {
         callbacks.onEventoRegistro(
             EventoExperimento(
@@ -188,6 +208,7 @@ class ControladorRestauranteIpc(
     ) : Handler(Looper.getMainLooper()) {
         private val referenciaControlador = WeakReference(controlador)
 
+        // Interpreta el mensaje IPC recibido del servicio y despacha el callback correspondiente
         override fun handleMessage(msg: Message) {
             val controlador = referenciaControlador.get() ?: return
             val mensajes = msg.data.getInt(KEY_MENSAJES_INTERCAMBIADOS, 0)
@@ -211,6 +232,7 @@ class ControladorRestauranteIpc(
             }
         }
 
+        // Extrae del mensaje IPC los datos de una orden y los convierte en un evento de dominio
         private fun Message.aEventoOrden(): EventoOrdenRestaurante {
             return EventoOrdenRestaurante(
                 idOrden = data.getInt(KEY_ID_ORDEN),
@@ -225,6 +247,7 @@ class ControladorRestauranteIpc(
             )
         }
 
+        // Extrae del mensaje IPC los datos de un evento de registro y los convierte en un EventoExperimento
         private fun Message.aEventoRegistro(): EventoExperimento {
             val tipo = runCatching {
                 TipoEvento.valueOf(data.getString(KEY_EVENTO_TIPO).orEmpty())
@@ -238,6 +261,7 @@ class ControladorRestauranteIpc(
             )
         }
 
+        // Convierte el texto recibido en el origen del evento, usando Servicio como valor por defecto
         private fun obtenerOrigen(valor: String?): OrigenEvento {
             return runCatching {
                 OrigenEvento.valueOf(valor.orEmpty())

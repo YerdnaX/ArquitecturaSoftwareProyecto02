@@ -12,11 +12,17 @@ class EjecutorCarreraBoletos(
     private val callbacks: Callbacks
 ) {
     interface Callbacks {
+        // Notifica que el estado de un comprador cambió durante la ejecución
         fun onCompradorActualizado(idEjecucion: Int, comprador: CompradorBoleto)
+        // Notifica que las métricas de la simulación se actualizaron
         fun onMetricasActualizadas(idEjecucion: Int, metricas: MetricasCarreraBoletos)
+        // Notifica que ocurrió un evento técnico durante la ejecución
         fun onEvento(idEjecucion: Int, evento: EventoTecnicoCarreraBoletos)
+        // Notifica que la ejecución terminó exitosamente con su resultado
         fun onFinalizada(idEjecucion: Int, resultado: ResultadoCarreraBoletos)
+        // Notifica que la ejecución fue cancelada
         fun onCancelada(idEjecucion: Int)
+        // Notifica que ocurrió un error durante la ejecución
         fun onError(idEjecucion: Int, mensaje: String?, throwable: Throwable?)
     }
 
@@ -25,6 +31,7 @@ class EjecutorCarreraBoletos(
     private val hilos = mutableListOf<Thread>()
     private var coordinador: Thread? = null
 
+    // Lanza un hilo por comprador que intenta comprar un boleto en el modo indicado y coordina su finalización
     fun iniciar(
         idEjecucion: Int,
         configuracion: ConfiguracionCarreraBoletos,
@@ -142,6 +149,7 @@ class EjecutorCarreraBoletos(
         coordinador?.start()
     }
 
+    // Marca la ejecución como cancelada e interrumpe todos los hilos en curso
     fun cancelar() {
         cancelada.set(true)
         synchronized(hilos) {
@@ -150,6 +158,7 @@ class EjecutorCarreraBoletos(
         coordinador?.interrupt()
     }
 
+    // Cancela la ejecución y espera a que los hilos terminen antes de liberar los recursos
     fun limpiar() {
         cancelar()
         val copiaHilos = synchronized(hilos) { hilos.toList() }
@@ -166,6 +175,7 @@ class EjecutorCarreraBoletos(
         }
     }
 
+    // Simula la compra de un boleto sin sincronización, permitiendo que se produzca una condición de carrera
     private fun comprarSinMutex(
         idEjecucion: Int,
         idComprador: Int,
@@ -199,6 +209,7 @@ class EjecutorCarreraBoletos(
         }
     }
 
+    // Simula la compra de un boleto protegiendo el acceso al recurso compartido con un mutex
     private fun comprarConMutex(
         idEjecucion: Int,
         idComprador: Int,
@@ -247,6 +258,7 @@ class EjecutorCarreraBoletos(
         }
     }
 
+    // Publica que el comprador está intentando entrar a comprar un boleto
     private fun publicarIntento(idEjecucion: Int, idComprador: Int, nombre: String) {
         publicar {
             callbacks.onEvento(idEjecucion, EventoTecnicoCarreraBoletos.CompradorIntentandoEntrar(idComprador))
@@ -262,6 +274,7 @@ class EjecutorCarreraBoletos(
         }
     }
 
+    // Publica que el comprador entró a la sección crítica junto con las métricas actuales
     private fun publicarSeccionCritica(
         idEjecucion: Int,
         idComprador: Int,
@@ -289,6 +302,7 @@ class EjecutorCarreraBoletos(
         }
     }
 
+    // Publica que la venta se realizó con éxito junto con las métricas actualizadas
     private fun publicarVenta(
         idEjecucion: Int,
         idComprador: Int,
@@ -318,6 +332,7 @@ class EjecutorCarreraBoletos(
         }
     }
 
+    // Publica que el comprador se quedó sin boleto disponible
     private fun publicarSinBoleto(
         idEjecucion: Int,
         idComprador: Int,
@@ -345,6 +360,7 @@ class EjecutorCarreraBoletos(
         }
     }
 
+    // Publica el estado actual de las métricas de la simulación
     private fun publicarMetricas(
         idEjecucion: Int,
         modo: ModoCarreraBoletos,
@@ -361,6 +377,7 @@ class EjecutorCarreraBoletos(
         }
     }
 
+    // Construye un snapshot de las métricas actuales a partir del estado del recurso compartido
     private fun crearMetricas(
         modo: ModoCarreraBoletos,
         config: ConfiguracionCarreraBoletos,
@@ -382,6 +399,7 @@ class EjecutorCarreraBoletos(
         )
     }
 
+    // Construye el resultado final de la ejecución, detectando si hubo error de concurrencia
     private fun crearResultado(
         modo: ModoCarreraBoletos,
         config: ConfiguracionCarreraBoletos,
@@ -401,6 +419,7 @@ class EjecutorCarreraBoletos(
         )
     }
 
+    // Ejecuta la acción en el hilo principal, despachándola si es necesario
     private fun publicar(accion: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             accion()

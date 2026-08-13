@@ -15,6 +15,7 @@ import io.yerdna.architecturasos.ui.screen.PantallaParqueoInteligente
 import io.yerdna.architecturasos.ui.screen.PantallaRedAgentes
 import io.yerdna.architecturasos.ui.screen.PantallaRestauranteIpc
 
+// Configura el NavHost de la aplicacion y define las rutas hacia el panel de experimentos y cada pantalla individual.
 @Composable
 fun AplicacionOSPlayground() {
     val navController = rememberNavController()

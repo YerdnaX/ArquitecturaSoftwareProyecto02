@@ -39,6 +39,7 @@ private val TAGS_LOGCAT_DOCUMENTADOS = listOf(
     "OSPlayground/Memory"
 )
 
+// Pantalla principal de diagnostico del sistema: carga las herramientas disponibles y muestra el contenido o un error.
 @Composable
 fun PantallaDiagnosticoSistema(
     onVolver: () -> Unit
@@ -69,6 +70,7 @@ fun PantallaDiagnosticoSistema(
     }
 }
 
+// Arma la lista con el resumen de metricas y la tarjeta de cada herramienta de diagnostico disponible.
 @Composable
 private fun ContenidoDiagnosticoListo(
     innerPadding: PaddingValues,
@@ -125,6 +127,7 @@ private fun ContenidoDiagnosticoListo(
     }
 }
 
+// Muestra el mensaje de error cuando no fue posible cargar las herramientas de diagnostico.
 @Composable
 private fun ContenidoDiagnosticoError(
     innerPadding: PaddingValues,
@@ -149,6 +152,7 @@ private fun ContenidoDiagnosticoError(
     }
 }
 
+// Muestra el resumen con la cantidad de herramientas, comandos y experimentos cubiertos por el diagnostico.
 @Composable
 private fun PanelMetricasDiagnostico(
     totalHerramientas: Int,
@@ -181,6 +185,7 @@ private fun PanelMetricasDiagnostico(
     }
 }
 
+// Muestra la tarjeta con la descripcion, cuando usarla, que valida y las limitaciones de una herramienta de diagnostico.
 @Composable
 private fun TarjetaHerramientaDiagnostico(
     herramienta: HerramientaDiagnostico
@@ -236,6 +241,7 @@ private fun TarjetaHerramientaDiagnostico(
     }
 }
 
+// Muestra la comparacion entre Android y Linux para procesos, IPC y herramientas de diagnostico.
 @Composable
 private fun PanelComparacionAndroidLinux() {
     SeccionCarrera(titulo = stringResource(R.string.diagnostico_comparacion_titulo)) {
@@ -257,6 +263,7 @@ private fun PanelComparacionAndroidLinux() {
     }
 }
 
+// Renderiza una fila comparando el comportamiento de Android y Linux para un tema puntual.
 @Composable
 private fun FilaComparacion(
     tituloResId: Int,
@@ -281,6 +288,7 @@ private fun FilaComparacion(
     }
 }
 
+// Muestra los pasos sugeridos para hacer una demostracion en vivo del diagnostico del sistema.
 @Composable
 private fun PanelDemostracionEnVivo() {
     SeccionCarrera(titulo = stringResource(R.string.diagnostico_demo_titulo)) {
@@ -307,6 +315,7 @@ private fun PanelDemostracionEnVivo() {
     }
 }
 
+// Traduce la categoria de una herramienta de diagnostico a un texto legible para el usuario.
 @Composable
 private fun textoCategoria(categoria: CategoriaDiagnostico): String {
     return when (categoria) {
@@ -322,6 +331,7 @@ private fun textoCategoria(categoria: CategoriaDiagnostico): String {
     }
 }
 
+// Vista previa de la pantalla de diagnostico del sistema.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaDiagnosticoSistemaPreview() {

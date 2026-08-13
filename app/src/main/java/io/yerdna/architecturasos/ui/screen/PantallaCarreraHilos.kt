@@ -48,6 +48,7 @@ import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+// Pantalla principal del experimento Carrera de Hilos: administra el viewmodel, el registro de eventos y la confirmacion de salida.
 @Composable
 fun PantallaCarreraHilos(
     onVolver: () -> Unit
@@ -67,6 +68,7 @@ fun PantallaCarreraHilos(
     val logError = stringResource(R.string.log_carrera_hilos_error)
     val logSalidaConfirmada = stringResource(R.string.log_carrera_hilos_salida_confirmada)
 
+    // Traduce cada evento del experimento en una entrada legible dentro del registro de eventos.
     fun registrarEvento(evento: EventoRegistroCarreraHilos) {
         when (evento) {
             is EventoRegistroCarreraHilos.EjecucionIniciada -> registro.logger.info(
@@ -110,6 +112,7 @@ fun PantallaCarreraHilos(
         }
     }
 
+    // Pide confirmacion antes de salir si hay una ejecucion activa, o vuelve directamente si no la hay.
     fun solicitarSalida() {
         if (viewModel.hayEjecucionActiva()) {
             mostrarConfirmacionSalida = true
@@ -175,6 +178,7 @@ fun PantallaCarreraHilos(
     )
 }
 
+// Arma el scaffold y la lista con todas las secciones de la pantalla de la Carrera de Hilos.
 @Composable
 private fun ContenidoCarreraHilos(
     estado: EstadoCarreraHilos,
@@ -278,6 +282,7 @@ private fun ContenidoCarreraHilos(
     }
 }
 
+// Muestra los selectores de cantidad de hilos y trabajo, y los botones de iniciar/cancelar/reiniciar la carrera.
 @Composable
 private fun ControlesCarreraHilos(
     configuracion: ConfiguracionCarreraHilos,
@@ -328,6 +333,7 @@ private fun ControlesCarreraHilos(
     }
 }
 
+// Lista los comandos y pasos para verificar externamente el comportamiento de la carrera de hilos, con opcion de copiarlos.
 @Composable
 private fun ComoVerificarCarreraHilos() {
     val clipboard = LocalClipboard.current
@@ -392,6 +398,7 @@ private data class ComandoVerificacionCarrera(
     val descripcionResId: Int
 )
 
+// Muestra el dialogo de confirmacion para salir cancelando la carrera de hilos en curso.
 @Composable
 private fun DialogoSalidaCarreraHilos(
     onConfirmar: () -> Unit,
@@ -414,6 +421,7 @@ private fun DialogoSalidaCarreraHilos(
     )
 }
 
+// Traduce el estado general de la carrera de hilos a un texto legible para el usuario.
 @Composable
 private fun textoEstadoCarrera(estado: EstadoCarreraHilos): String {
     return when (estado) {
@@ -425,6 +433,7 @@ private fun textoEstadoCarrera(estado: EstadoCarreraHilos): String {
     }
 }
 
+// Traduce el estado individual de un hilo a un texto legible para el usuario.
 @Composable
 private fun textoEstadoHilo(estado: EstadoHiloCarrera): String {
     return when (estado) {
@@ -436,6 +445,7 @@ private fun textoEstadoHilo(estado: EstadoHiloCarrera): String {
     }
 }
 
+// Elige el color asociado al estado actual de un hilo para resaltarlo visualmente.
 @Composable
 private fun colorEstadoHilo(estado: EstadoHiloCarrera): Color {
     return when (estado) {
@@ -447,10 +457,12 @@ private fun colorEstadoHilo(estado: EstadoHiloCarrera): Color {
     }
 }
 
+// Formatea una cadena de recurso con los argumentos dados usando el locale por defecto.
 private fun String.formatear(vararg argumentos: Any): String {
     return String.format(Locale.getDefault(), this, *argumentos)
 }
 
+// Vista previa de la pantalla de la carrera de hilos en su estado inicial, sin ejecucion.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaCarreraHilosInicialPreview() {
@@ -481,6 +493,7 @@ private fun PantallaCarreraHilosInicialPreview() {
     }
 }
 
+// Vista previa de la pantalla de la carrera de hilos mientras los hilos estan en ejecucion.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaCarreraHilosEjecutandoPreview() {

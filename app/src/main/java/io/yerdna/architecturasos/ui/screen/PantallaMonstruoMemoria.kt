@@ -66,6 +66,7 @@ private val ESTADOS_NUEVA_EJECUCION = setOf(
     EstadoEjecucionMemoria.RecolectorSolicitado
 )
 
+// Pantalla principal del experimento monstruo de memoria, arma el estado y conecta las acciones con el ViewModel
 @Composable
 fun PantallaMonstruoMemoria(
     onVolver: () -> Unit
@@ -86,6 +87,7 @@ fun PantallaMonstruoMemoria(
     val logSalidaConfirmada = stringResource(R.string.log_monstruo_memoria_salida_confirmada)
     val logError = stringResource(R.string.log_monstruo_memoria_error)
 
+    // Traduce cada evento del experimento a una linea de log en el registro correspondiente
     fun registrarEvento(evento: EventoRegistroMonstruoMemoria) {
         when (evento) {
             EventoRegistroMonstruoMemoria.AperturaModulo -> registro.logger.info(logApertura)
@@ -119,6 +121,7 @@ fun PantallaMonstruoMemoria(
         }
     }
 
+    // Decide si hay que pedir confirmacion antes de salir o si se puede volver de una vez
     fun solicitarSalida() {
         if (viewModel.estado.hayTrabajoActivo) {
             mostrarConfirmacionSalida = true
@@ -127,6 +130,7 @@ fun PantallaMonstruoMemoria(
         }
     }
 
+    // Limpia el registro si toca arrancar una ejecucion nueva y dispara la reserva de memoria
     fun onReservar(tamanoMb: Int) {
         if (viewModel.estado.estadoEjecucion in ESTADOS_NUEVA_EJECUCION) {
             registro.limpiar()
@@ -187,6 +191,7 @@ fun PantallaMonstruoMemoria(
     )
 }
 
+// Consulta al sistema cuanta memoria RAM disponible queda usando ActivityManager
 private fun obtenerMemoriaDisponibleSistemaMb(context: Context): Long? {
     val gestor = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return null
     val info = ActivityManager.MemoryInfo()
@@ -194,6 +199,7 @@ private fun obtenerMemoriaDisponibleSistemaMb(context: Context): Long? {
     return info.availMem / (1024 * 1024)
 }
 
+// Arma todo el contenido de la pantalla dentro del scaffold: explicacion, visual, controles, metricas e historico
 @Composable
 private fun ContenidoMonstruoMemoria(
     estado: EstadoMonstruoMemoria,
@@ -266,11 +272,13 @@ private fun ContenidoMonstruoMemoria(
     }
 }
 
+// Calcula el porcentaje de memoria reservada respecto al limite seguro configurado
 private fun calcularPorcentajeUsado(estado: EstadoMonstruoMemoria): Int {
     if (estado.limiteSeguroMb <= 0) return 0
     return (estado.memoriaReservadaMb * 100) / estado.limiteSeguroMb
 }
 
+// Dibuja el circulo que crece de tamano y cambia de color segun cuanta presion de memoria hay
 @Composable
 private fun VisualMonstruoMemoria(
     estadoVisual: EstadoVisualMonstruo,
@@ -307,6 +315,7 @@ private fun VisualMonstruoMemoria(
     }
 }
 
+// Muestra los botones de reservar, liberar, solicitar gc y reiniciar, junto con la advertencia si la hay
 @Composable
 private fun ControlesMonstruoMemoria(
     estado: EstadoMonstruoMemoria,
@@ -369,6 +378,7 @@ private fun ControlesMonstruoMemoria(
     }
 }
 
+// Lista todas las metricas de memoria del estado actual (usada, maxima, libre, reservada, etc)
 @Composable
 private fun PanelMetricasMonstruoMemoria(
     estado: EstadoMonstruoMemoria
@@ -427,6 +437,7 @@ private fun PanelMetricasMonstruoMemoria(
     }
 }
 
+// Muestra el texto con el resultado de la ultima accion ejecutada o un mensaje de que aun no hay nada
 @Composable
 private fun PanelResultadoMonstruoMemoria(
     resultado: String?
@@ -440,6 +451,7 @@ private fun PanelResultadoMonstruoMemoria(
     }
 }
 
+// Muestra el listado historico de muestras de memoria, o un mensaje si todavia esta vacio
 @Composable
 private fun PanelHistoricoMonstruoMemoria(
     historico: List<MuestraMemoria>
@@ -467,6 +479,7 @@ private fun PanelHistoricoMonstruoMemoria(
     }
 }
 
+// Muestra los comandos adb sugeridos para verificar el experimento, cada uno con boton para copiar
 @Composable
 private fun ComoVerificarMonstruoMemoria() {
     val clipboard = LocalClipboard.current
@@ -531,6 +544,7 @@ private data class ComandoVerificacionMonstruoMemoria(
     val descripcionResId: Int
 )
 
+// Dialogo de confirmacion que aparece al intentar salir con trabajo de memoria activo
 @Composable
 private fun DialogoSalidaMonstruoMemoria(
     onConfirmar: () -> Unit,
@@ -553,6 +567,7 @@ private fun DialogoSalidaMonstruoMemoria(
     )
 }
 
+// Traduce el estado de ejecucion a su texto legible correspondiente
 @Composable
 private fun textoEstadoEjecucion(estadoEjecucion: EstadoEjecucionMemoria): String {
     return when (estadoEjecucion) {
@@ -566,6 +581,7 @@ private fun textoEstadoEjecucion(estadoEjecucion: EstadoEjecucionMemoria): Strin
     }
 }
 
+// Traduce el estado visual del monstruo a su texto legible correspondiente
 @Composable
 private fun textoEstadoVisual(estadoVisual: EstadoVisualMonstruo): String {
     return when (estadoVisual) {
@@ -576,10 +592,12 @@ private fun textoEstadoVisual(estadoVisual: EstadoVisualMonstruo): String {
     }
 }
 
+// Extension corta para formatear strings con argumentos usando el locale por defecto
 private fun String.formatear(vararg argumentos: Any): String {
     return String.format(Locale.getDefault(), this, *argumentos)
 }
 
+// Preview de la pantalla en su estado inicial, sin memoria reservada todavia
 @Preview(showBackground = true)
 @Composable
 private fun PantallaMonstruoMemoriaInactivaPreview() {
@@ -595,6 +613,7 @@ private fun PantallaMonstruoMemoriaInactivaPreview() {
     }
 }
 
+// Preview de la pantalla con una reserva exitosa y su historico con una muestra
 @Preview(showBackground = true)
 @Composable
 private fun PantallaMonstruoMemoriaExitosaPreview() {
@@ -632,6 +651,7 @@ private fun PantallaMonstruoMemoriaExitosaPreview() {
     }
 }
 
+// Preview de la pantalla en estado de advertencia por presion de memoria alta
 @Preview(showBackground = true)
 @Composable
 private fun PantallaMonstruoMemoriaAdvertenciaPreview() {
@@ -669,6 +689,7 @@ private fun PantallaMonstruoMemoriaAdvertenciaPreview() {
     }
 }
 
+// Preview de la pantalla en estado de error por falta de memoria
 @Preview(showBackground = true)
 @Composable
 private fun PantallaMonstruoMemoriaErrorPreview() {

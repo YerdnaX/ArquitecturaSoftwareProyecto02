@@ -10,11 +10,17 @@ class ServidorRedAgentes(
     private val callbacks: Callbacks
 ) {
     interface Callbacks {
+        // Notifica que el servidor esta iniciando
         fun onIniciando()
+        // Notifica que el servidor quedo escuchando en el puerto indicado
         fun onEscuchando(puerto: Int)
+        // Notifica que un cliente se conecto al servidor
         fun onClienteConectado()
+        // Notifica que se proceso un mensaje de un cliente
         fun onMensajeProcesado(evento: EventoServidorRedAgentes)
+        // Notifica que el servidor se detuvo
         fun onDetenido()
+        // Notifica que ocurrio un error, con su codigo y causa opcional
         fun onError(codigo: CodigoErrorRedAgentes, throwable: Throwable? = null)
     }
 
@@ -23,6 +29,7 @@ class ServidorRedAgentes(
     private var serverSocket: ServerSocket? = null
     private var socketCliente: Socket? = null
 
+    // Abre un socket en un puerto libre y atiende clientes en bucle mientras el servidor este activo
     fun ejecutar() {
         activo = true
         callbacks.onIniciando()
@@ -59,12 +66,14 @@ class ServidorRedAgentes(
         }
     }
 
+    // Marca el servidor como inactivo y cierra el socket del cliente y del servidor
     fun detener() {
         activo = false
         cerrarSocketCliente()
         cerrarServidor()
     }
 
+    // Lee el mensaje del cliente, arma la respuesta y la envia de vuelta por el mismo socket
     private fun atenderCliente(cliente: Socket) {
         cliente.use { socket ->
             socket.soTimeout = TIMEOUT_SOCKET_MS
@@ -93,6 +102,7 @@ class ServidorRedAgentes(
         }
     }
 
+    // Lee byte a byte del socket hasta encontrar el terminador del mensaje o exceder el limite permitido
     private fun leerMensaje(socket: Socket): LecturaMensaje {
         val buffer = ByteArrayOutputStream()
         val input = socket.getInputStream()
@@ -117,6 +127,7 @@ class ServidorRedAgentes(
         throw IllegalStateException("Mensaje incompleto")
     }
 
+    // Cierra el socket del cliente actual, reportando error si la operacion falla
     private fun cerrarSocketCliente() {
         try {
             socketCliente?.close()
@@ -125,6 +136,7 @@ class ServidorRedAgentes(
         }
     }
 
+    // Cierra el socket del servidor, reportando error si la operacion falla
     private fun cerrarServidor() {
         try {
             serverSocket?.close()
@@ -133,6 +145,7 @@ class ServidorRedAgentes(
         }
     }
 
+    // Convierte el mensaje a bytes agregandole el terminador del protocolo
     private fun aBytesConTerminador(mensaje: String): ByteArray {
         return "$mensaje$TERMINADOR_MENSAJE".toByteArray(Charsets.UTF_8)
     }

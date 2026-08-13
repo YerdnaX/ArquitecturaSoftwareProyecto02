@@ -62,6 +62,7 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.launch
 
+// Pantalla principal que arma el ViewModel, el controlador de la fabrica y coordina la UI completa
 @Composable
 fun PantallaFabricaRobots(
     onVolver: () -> Unit
@@ -73,10 +74,12 @@ fun PantallaFabricaRobots(
         ControladorFabricaRobots(
             applicationContext = context,
             callbacks = object : ControladorFabricaRobots.Callbacks {
+                // Actualiza el PID y el contador de mensajes de la fabrica en el ViewModel
                 override fun onPidFabrica(pid: Int, mensajes: Int) {
                     viewModel.actualizarPidFabrica(pid, mensajes)
                 }
 
+                // Actualiza el estado de la fabrica o marca el experimento como completado si ya termino
                 override fun onEstadoFabrica(estado: EstadoEjecucionFabrica, mensajes: Int) {
                     if (estado == EstadoEjecucionFabrica.Inactivo &&
                         viewModel.estado.robotsEnsamblados >= viewModel.estado.robotsConfigurados &&
@@ -89,16 +92,19 @@ fun PantallaFabricaRobots(
                     }
                 }
 
+                // Registra en el ViewModel que se ensamblo un nuevo robot
                 override fun onRobotEnsamblado(robots: Int, mensajes: Int) {
                     viewModel.robotEnsamblado(robots, mensajes)
                 }
 
+                // Registra el error recibido de la fabrica secundaria y lo marca en el ViewModel
                 override fun onError(mensaje: String, mensajes: Int) {
                     val texto = mensaje.ifBlank { "Error en la fabrica secundaria" }
                     registro.logger.error(texto)
                     viewModel.marcarError(texto, mensajes)
                 }
 
+                // Reenvia el evento recibido al logger del registro del experimento
                 override fun onEventoRegistro(evento: EventoExperimento) {
                     registro.logger.registrar(evento)
                 }
@@ -107,6 +113,7 @@ fun PantallaFabricaRobots(
     }
 
     var mostrarConfirmacion by remember { mutableStateOf(false) }
+    // Detiene la fabrica y marca el experimento como cancelado si corresponde
     fun detener(cancelado: Boolean) {
         registro.logger.info("Detencion solicitada por el usuario")
         viewModel.iniciarDetencion()
@@ -117,6 +124,7 @@ fun PantallaFabricaRobots(
         }
     }
 
+    // Decide si se puede salir de la pantalla o si primero hay que pedir confirmacion
     fun solicitarSalida() {
         when (viewModel.estado.estado) {
             EstadoEjecucionFabrica.Iniciando,
@@ -175,6 +183,7 @@ fun PantallaFabricaRobots(
     )
 }
 
+// Arma el scaffold y la lista con todas las secciones de la pantalla del experimento
 @Composable
 private fun ContenidoFabricaRobots(
     estado: EstadoFabricaRobots,
@@ -226,6 +235,7 @@ private fun ContenidoFabricaRobots(
     }
 }
 
+// Muestra el campo para ingresar la cantidad de robots y los botones de iniciar/detener
 @Composable
 private fun ConfiguracionFabrica(
     estado: EstadoFabricaRobots,
@@ -277,6 +287,7 @@ private fun ConfiguracionFabrica(
     }
 }
 
+// Muestra los bloques de la oficina principal y la fabrica secundaria con su estado
 @Composable
 private fun VisualizacionProcesos(estado: EstadoFabricaRobots) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -317,6 +328,7 @@ private fun VisualizacionProcesos(estado: EstadoFabricaRobots) {
     }
 }
 
+// Muestra la tarjeta con el nombre, PID y estado de un proceso
 @Composable
 private fun BloqueProceso(
     nombre: String,
@@ -358,6 +370,7 @@ private fun BloqueProceso(
     }
 }
 
+// Muestra el resumen con los resultados de la ultima ejecucion de la fabrica
 @Composable
 private fun ResultadoFabrica(estado: EstadoFabricaRobots) {
     SeccionSimple(titulo = stringResource(R.string.resultado_ultima_ejecucion)) {
@@ -394,6 +407,7 @@ private fun ResultadoFabrica(estado: EstadoFabricaRobots) {
     }
 }
 
+// Muestra la lista de comandos adb para verificar el experimento y permite copiarlos
 @Composable
 private fun ComoVerificar() {
     val clipboard = LocalClipboard.current
@@ -456,6 +470,7 @@ private data class ComandoVerificacion(
     val descripcionResId: Int
 )
 
+// Muestra un titulo seguido del contenido que se le pase
 @Composable
 private fun SeccionSimple(
     titulo: String,
@@ -473,6 +488,7 @@ private fun SeccionSimple(
     }
 }
 
+// Muestra una fila con una etiqueta y su valor correspondiente
 @Composable
 private fun DatoResultado(
     etiqueta: String,
@@ -495,6 +511,7 @@ private fun DatoResultado(
     }
 }
 
+// Muestra el dialogo de confirmacion para cancelar el experimento
 @Composable
 private fun DialogoCancelarExperimento(
     onConfirmar: () -> Unit,
@@ -517,6 +534,7 @@ private fun DialogoCancelarExperimento(
     )
 }
 
+// Devuelve el texto legible para el estado de ejecucion de la fabrica
 @Composable
 private fun textoEstado(estado: EstadoEjecucionFabrica): String {
     return when (estado) {
@@ -528,6 +546,7 @@ private fun textoEstado(estado: EstadoEjecucionFabrica): String {
     }
 }
 
+// Devuelve el texto legible para el resultado de la ultima ejecucion
 @Composable
 private fun textoResultado(resultado: ResultadoUltimaEjecucion): String {
     return when (resultado) {
@@ -538,6 +557,7 @@ private fun textoResultado(resultado: ResultadoUltimaEjecucion): String {
     }
 }
 
+// Devuelve el color asociado al estado de ejecucion de la fabrica
 @Composable
 private fun colorEstado(estado: EstadoEjecucionFabrica): Color {
     return when (estado) {
@@ -549,11 +569,13 @@ private fun colorEstado(estado: EstadoEjecucionFabrica): Color {
     }
 }
 
+// Formatea un timestamp en milisegundos como hora HH:mm:ss
 private fun formatoHora(valor: Long?): String {
     if (valor == null) return "--"
     return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(valor))
 }
 
+// Preview del contenido de la pantalla en estado inactivo
 @Preview(showBackground = true)
 @Composable
 private fun PantallaFabricaRobotsInactivoPreview() {
@@ -570,6 +592,7 @@ private fun PantallaFabricaRobotsInactivoPreview() {
     }
 }
 
+// Preview del contenido de la pantalla mientras la fabrica esta en ejecucion
 @Preview(showBackground = true)
 @Composable
 private fun PantallaFabricaRobotsEjecucionPreview() {
@@ -593,6 +616,7 @@ private fun PantallaFabricaRobotsEjecucionPreview() {
     }
 }
 
+// Preview del contenido de la pantalla cuando ocurre un error
 @Preview(showBackground = true)
 @Composable
 private fun PantallaFabricaRobotsErrorPreview() {

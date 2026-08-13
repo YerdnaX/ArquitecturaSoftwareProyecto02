@@ -116,10 +116,12 @@ private val experimentos = listOf(
     )
 )
 
+// Busca en la lista de experimentos el que corresponde a la ruta de navegacion dada.
 fun obtenerExperimentoPorRuta(ruta: String): ExperimentoResumen {
     return experimentos.first { it.ruta == ruta }
 }
 
+// Pantalla principal que lista todos los experimentos disponibles como tarjetas seleccionables.
 @Composable
 fun PantallaPanelExperimentos(
     onAbrirExperimento: (String) -> Unit
@@ -150,6 +152,7 @@ fun PantallaPanelExperimentos(
     }
 }
 
+// Renderiza la tarjeta de un experimento con su icono, nombre, descripcion y boton para abrirlo.
 @Composable
 private fun TarjetaExperimento(
     experimento: ExperimentoResumen,
@@ -213,6 +216,7 @@ private fun TarjetaExperimento(
     }
 }
 
+// Vista previa del panel con la lista completa de experimentos.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaPanelExperimentosPreview() {

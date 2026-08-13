@@ -15,6 +15,7 @@ import io.yerdna.architecturasos.ui.Navegacion
 import io.yerdna.architecturasos.ui.component.ExperimentoScaffold
 import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
 
+// Pantalla temporal para experimentos aun no implementados: muestra su nombre, concepto y un aviso de "en construccion".
 @Composable
 fun PantallaExperimentoTemporal(
     experimento: ExperimentoResumen,
@@ -50,6 +51,7 @@ fun PantallaExperimentoTemporal(
     }
 }
 
+// Vista previa de la pantalla temporal usando el experimento Fabrica de Robots como ejemplo.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaExperimentoTemporalPreview() {

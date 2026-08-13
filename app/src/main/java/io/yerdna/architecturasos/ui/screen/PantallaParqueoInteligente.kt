@@ -65,6 +65,7 @@ import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+// Pantalla principal del experimento de parqueo inteligente: arma el estado, registra eventos y muestra el contenido
 @Composable
 fun PantallaParqueoInteligente(
     onVolver: () -> Unit
@@ -86,6 +87,7 @@ fun PantallaParqueoInteligente(
     val logSalidaConfirmada = stringResource(R.string.log_parqueo_inteligente_salida_confirmada)
     val logError = stringResource(R.string.log_parqueo_inteligente_error)
 
+    // Traduce cada evento del experimento a una entrada de log en el registro
     fun registrarEvento(evento: EventoRegistroParqueoInteligente) {
         when (evento) {
             is EventoRegistroParqueoInteligente.ConfiguracionAplicada -> registro.logger.info(
@@ -132,6 +134,7 @@ fun PantallaParqueoInteligente(
         }
     }
 
+    // Pide confirmación de salida si hay una ejecución activa, o vuelve directamente si no la hay
     fun solicitarSalida() {
         if (viewModel.hayEjecucionActiva()) {
             mostrarConfirmacionSalida = true
@@ -190,6 +193,7 @@ fun PantallaParqueoInteligente(
     )
 }
 
+// Arma el contenido scrolleable de la pantalla con todas las secciones del experimento
 @Composable
 private fun ContenidoParqueoInteligente(
     estado: EstadoParqueoInteligente,
@@ -272,6 +276,7 @@ private fun ContenidoParqueoInteligente(
     }
 }
 
+// Muestra los controles de configuración (espacios, vehículos) y los botones de acción
 @Composable
 private fun ControlesParqueoInteligente(
     configuracion: ConfiguracionParqueoInteligente,
@@ -330,6 +335,7 @@ private fun ControlesParqueoInteligente(
     }
 }
 
+// Muestra un control numérico con botones para aumentar o disminuir un valor dentro de un rango
 @Composable
 private fun ControlNumeroParqueoInteligente(
     etiqueta: String,
@@ -381,6 +387,7 @@ private fun ControlNumeroParqueoInteligente(
     }
 }
 
+// Muestra la representación visual de los espacios de estacionamiento ocupados y libres
 @Composable
 private fun PanelEstacionamiento(
     metricas: MetricasParqueoInteligente
@@ -419,6 +426,7 @@ private fun PanelEstacionamiento(
     }
 }
 
+// Muestra la lista de vehículos con su estado actual
 @Composable
 private fun ListaVehiculosParqueoInteligente(
     vehiculos: List<VehiculoParqueoInteligente>
@@ -430,6 +438,7 @@ private fun ListaVehiculosParqueoInteligente(
     }
 }
 
+// Muestra una fila con el color y el estado de un vehículo individual
 @Composable
 private fun FilaVehiculoParqueoInteligente(
     vehiculo: VehiculoParqueoInteligente
@@ -467,6 +476,7 @@ private fun FilaVehiculoParqueoInteligente(
     }
 }
 
+// Muestra las métricas actuales de la ejecución (permisos, vehículos finalizados, tiempos, errores)
 @Composable
 private fun PanelMetricasParqueoInteligente(
     fase: FaseParqueoInteligente,
@@ -508,6 +518,7 @@ private fun PanelMetricasParqueoInteligente(
     }
 }
 
+// Muestra el resumen de resultados de la última ejecución del experimento
 @Composable
 private fun PanelResultadoParqueoInteligente(
     resultado: ResultadoParqueoInteligente?
@@ -552,6 +563,7 @@ private fun PanelResultadoParqueoInteligente(
     }
 }
 
+// Muestra los comandos adb para verificar el experimento y permite copiarlos al portapapeles
 @Composable
 private fun ComoVerificarParqueoInteligente() {
     val clipboard = LocalClipboard.current
@@ -608,6 +620,7 @@ private data class ComandoVerificacionParqueoInteligente(
     val descripcionResId: Int
 )
 
+// Muestra el diálogo de confirmación para salir cancelando la ejecución en curso
 @Composable
 private fun DialogoSalidaParqueoInteligente(
     onConfirmar: () -> Unit,
@@ -630,6 +643,7 @@ private fun DialogoSalidaParqueoInteligente(
     )
 }
 
+// Traduce la fase de la ejecución a su texto legible para mostrar en pantalla
 @Composable
 private fun textoFaseParqueoInteligente(fase: FaseParqueoInteligente): String {
     return when (fase) {
@@ -641,6 +655,7 @@ private fun textoFaseParqueoInteligente(fase: FaseParqueoInteligente): String {
     }
 }
 
+// Traduce el estado de un vehículo a su texto legible para mostrar en pantalla
 @Composable
 private fun textoEstadoVehiculo(estado: EstadoVehiculoParqueoInteligente): String {
     return when (estado) {
@@ -654,6 +669,7 @@ private fun textoEstadoVehiculo(estado: EstadoVehiculoParqueoInteligente): Strin
     }
 }
 
+// Determina el color asociado al estado actual de un vehículo
 @Composable
 private fun colorEstadoVehiculo(estado: EstadoVehiculoParqueoInteligente): Color {
     return when (estado) {
@@ -668,10 +684,12 @@ private fun colorEstadoVehiculo(estado: EstadoVehiculoParqueoInteligente): Color
     }
 }
 
+// Formatea el string aplicando los argumentos según el locale por defecto
 private fun String.formatear(vararg argumentos: Any): String {
     return String.format(Locale.getDefault(), this, *argumentos)
 }
 
+// Preview del contenido en su estado inicial, antes de iniciar la ejecución
 @Preview(showBackground = true)
 @Composable
 private fun PantallaParqueoInteligenteInicialPreview() {
@@ -691,6 +709,7 @@ private fun PantallaParqueoInteligenteInicialPreview() {
     }
 }
 
+// Preview del contenido con la ejecución en curso y vehículos en distintos estados
 @Preview(showBackground = true)
 @Composable
 private fun PantallaParqueoInteligenteEjecutandoPreview() {

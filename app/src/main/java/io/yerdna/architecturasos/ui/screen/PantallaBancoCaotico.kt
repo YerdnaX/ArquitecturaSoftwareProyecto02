@@ -61,6 +61,7 @@ import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+// Pantalla principal del experimento Banco Caotico: administra el viewmodel, el registro de eventos y la confirmacion de salida.
 @Composable
 fun PantallaBancoCaotico(
     onVolver: () -> Unit
@@ -82,6 +83,7 @@ fun PantallaBancoCaotico(
     val logCarreraNoDetectada = stringResource(R.string.log_banco_caotico_carrera_no_detectada)
     val logSalidaConfirmada = stringResource(R.string.log_banco_caotico_salida_confirmada)
 
+    // Traduce cada evento del experimento en una entrada legible dentro del registro de eventos.
     fun registrarEvento(evento: EventoRegistroBancoCaotico) {
         when (evento) {
             is EventoRegistroBancoCaotico.ConfiguracionAplicada -> registro.logger.info(
@@ -134,6 +136,7 @@ fun PantallaBancoCaotico(
         }
     }
 
+    // Pide confirmacion antes de salir si hay una ejecucion activa, o vuelve directamente si no la hay.
     fun solicitarSalida() {
         if (viewModel.hayEjecucionActiva()) {
             mostrarConfirmacionSalida = true
@@ -191,6 +194,7 @@ fun PantallaBancoCaotico(
     )
 }
 
+// Arma el scaffold y la lista con todas las secciones de la pantalla del Banco Caotico.
 @Composable
 private fun ContenidoBancoCaotico(
     estado: EstadoBancoCaotico,
@@ -270,6 +274,7 @@ private fun ContenidoBancoCaotico(
     }
 }
 
+// Muestra los controles para configurar la cantidad de cajeros y operaciones, y los botones de iniciar/cancelar/reiniciar.
 @Composable
 private fun ControlesBancoCaotico(
     configuracion: ConfiguracionBancoCaotico,
@@ -367,6 +372,7 @@ private fun ControlesBancoCaotico(
     }
 }
 
+// Renderiza una tarjeta con el estado y los ultimos saldos leidos/escritos de un cajero.
 @Composable
 private fun FilaCajeroBancoCaotico(
     cajero: CajeroBancoCaotico,
@@ -415,6 +421,7 @@ private fun FilaCajeroBancoCaotico(
     }
 }
 
+// Muestra el panel con las metricas de configuracion y resultados de la ultima ejecucion del banco caotico.
 @Composable
 private fun PanelMetricasBancoCaotico(
     estado: EstadoBancoCaotico,
@@ -474,6 +481,7 @@ private fun PanelMetricasBancoCaotico(
     }
 }
 
+// Muestra si la ultima ejecucion detecto o no una condicion de carrera en el saldo.
 @Composable
 private fun PanelResultadoBancoCaotico(
     resultado: ResultadoBancoCaotico?
@@ -503,6 +511,7 @@ private fun PanelResultadoBancoCaotico(
     }
 }
 
+// Lista los comandos adb para verificar externamente el comportamiento del banco caotico, con opcion de copiarlos.
 @Composable
 private fun ComoVerificarBancoCaotico() {
     val clipboard = LocalClipboard.current
@@ -563,6 +572,7 @@ private data class ComandoVerificacionBancoCaotico(
     val descripcionResId: Int
 )
 
+// Muestra el dialogo de confirmacion para salir cancelando la ejecucion en curso del banco caotico.
 @Composable
 private fun DialogoSalidaBancoCaotico(
     onConfirmar: () -> Unit,
@@ -585,6 +595,7 @@ private fun DialogoSalidaBancoCaotico(
     )
 }
 
+// Traduce la fase actual del banco caotico a un texto legible para el usuario.
 @Composable
 private fun textoFaseBancoCaotico(fase: FaseBancoCaotico): String {
     return when (fase) {
@@ -596,6 +607,7 @@ private fun textoFaseBancoCaotico(fase: FaseBancoCaotico): String {
     }
 }
 
+// Traduce el estado individual de un cajero a un texto legible para el usuario.
 @Composable
 private fun textoEstadoCajero(estado: EstadoCajeroBancoCaotico): String {
     return when (estado) {
@@ -607,6 +619,7 @@ private fun textoEstadoCajero(estado: EstadoCajeroBancoCaotico): String {
     }
 }
 
+// Elige el color asociado al estado actual de un cajero para resaltarlo visualmente.
 @Composable
 private fun colorEstadoCajero(estado: EstadoCajeroBancoCaotico): Color {
     return when (estado) {
@@ -618,10 +631,12 @@ private fun colorEstadoCajero(estado: EstadoCajeroBancoCaotico): Color {
     }
 }
 
+// Formatea una cadena de recurso con los argumentos dados usando el locale por defecto.
 private fun String.formatear(vararg argumentos: Any): String {
     return String.format(Locale.getDefault(), this, *argumentos)
 }
 
+// Vista previa de la pantalla del banco caotico en su estado inicial, sin ejecucion.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaBancoCaoticoInicialPreview() {
@@ -645,6 +660,7 @@ private fun PantallaBancoCaoticoInicialPreview() {
     }
 }
 
+// Vista previa de la pantalla del banco caotico mostrando un resultado con carrera detectada.
 @Preview(showBackground = true)
 @Composable
 private fun PantallaBancoCaoticoResultadoPreview() {

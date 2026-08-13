@@ -12,10 +12,15 @@ class EjecutorBancoCaotico(
     private val callbacks: Callbacks
 ) {
     interface Callbacks {
+        // Notifica que el estado de un cajero cambió durante la ejecución
         fun onCajeroActualizado(idEjecucion: Int, cajero: CajeroBancoCaotico)
+        // Notifica que ocurrió un evento técnico durante la ejecución
         fun onEvento(idEjecucion: Int, evento: EventoBancoCaotico)
+        // Notifica que la ejecución terminó exitosamente con su resultado
         fun onFinalizada(idEjecucion: Int, resultado: ResultadoBancoCaotico)
+        // Notifica que la ejecución fue cancelada
         fun onCancelada(idEjecucion: Int)
+        // Notifica que ocurrió un error durante la ejecución
         fun onError(idEjecucion: Int, mensaje: String?, throwable: Throwable?)
     }
 
@@ -24,6 +29,7 @@ class EjecutorBancoCaotico(
     private var executorService: ExecutorService? = null
     private var coordinador: Thread? = null
 
+    // Lanza los hilos cajero que compiten por leer y escribir el saldo compartido sin sincronización
     fun iniciar(idEjecucion: Int, configuracion: ConfiguracionBancoCaotico) {
         limpiar()
         cancelada.set(false)
@@ -161,18 +167,21 @@ class EjecutorBancoCaotico(
         coordinador?.start()
     }
 
+    // Marca la ejecución como cancelada e interrumpe los hilos en curso
     fun cancelar() {
         cancelada.set(true)
         executorService?.shutdownNow()
         coordinador?.interrupt()
     }
 
+    // Cancela la ejecución y libera los recursos del ejecutor y del coordinador
     fun limpiar() {
         cancelar()
         executorService = null
         coordinador = null
     }
 
+    // Publica en el hilo principal el progreso parcial de un cajero
     private fun publicarProgreso(
         idEjecucion: Int,
         idCajero: Int,
@@ -200,6 +209,7 @@ class EjecutorBancoCaotico(
         }
     }
 
+    // Ejecuta la acción en el hilo principal, despachándola si es necesario
     private fun publicar(accion: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             accion()

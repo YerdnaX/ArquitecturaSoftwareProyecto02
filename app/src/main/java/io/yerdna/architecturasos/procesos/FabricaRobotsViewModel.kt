@@ -15,6 +15,7 @@ class FabricaRobotsViewModel : ViewModel() {
     val cantidadRobotsValida: Int?
         get() = textoCantidadRobots.toIntOrNull()?.takeIf { it >= ROBOTS_MINIMOS }
 
+    // Actualiza el texto de cantidad de robots ingresado, validando que no haya una ejecución en curso.
     fun actualizarCantidad(texto: String) {
         if (estado.estado == EstadoEjecucionFabrica.Iniciando ||
             estado.estado == EstadoEjecucionFabrica.Ejecucion ||
@@ -29,6 +30,7 @@ class FabricaRobotsViewModel : ViewModel() {
         }
     }
 
+    // Reinicia el estado para comenzar una nueva ejecución con la cantidad de robots indicada.
     fun prepararInicio(cantidad: Int) {
         estado = estado.copy(
             pidSecundario = null,
@@ -43,6 +45,7 @@ class FabricaRobotsViewModel : ViewModel() {
         )
     }
 
+    // Registra el PID del proceso secundario recibido junto con el conteo de mensajes.
     fun actualizarPidFabrica(pid: Int, mensajes: Int) {
         estado = estado.copy(
             pidSecundario = pid,
@@ -50,6 +53,7 @@ class FabricaRobotsViewModel : ViewModel() {
         )
     }
 
+    // Actualiza el estado de ejecución de la fábrica con el nuevo valor recibido.
     fun actualizarEstadoFabrica(nuevoEstado: EstadoEjecucionFabrica, mensajes: Int) {
         estado = estado.copy(
             estado = nuevoEstado,
@@ -57,6 +61,7 @@ class FabricaRobotsViewModel : ViewModel() {
         )
     }
 
+    // Registra que se ensambló un nuevo robot y actualiza el contador correspondiente.
     fun robotEnsamblado(cantidad: Int, mensajes: Int) {
         estado = estado.copy(
             estado = EstadoEjecucionFabrica.Ejecucion,
@@ -65,10 +70,12 @@ class FabricaRobotsViewModel : ViewModel() {
         )
     }
 
+    // Marca el estado como en proceso de detención.
     fun iniciarDetencion() {
         estado = estado.copy(estado = EstadoEjecucionFabrica.Deteniendo)
     }
 
+    // Marca la ejecución como cancelada y limpia los datos del proceso secundario.
     fun marcarCancelado() {
         estado = estado.copy(
             estado = EstadoEjecucionFabrica.Inactivo,
@@ -78,6 +85,7 @@ class FabricaRobotsViewModel : ViewModel() {
         )
     }
 
+    // Marca la ejecución como completada exitosamente.
     fun marcarCompletado(mensajes: Int) {
         estado = estado.copy(
             estado = EstadoEjecucionFabrica.Inactivo,
@@ -88,6 +96,7 @@ class FabricaRobotsViewModel : ViewModel() {
         )
     }
 
+    // Marca la ejecución como fallida con el mensaje de error indicado.
     fun marcarError(mensaje: String, mensajes: Int = estado.mensajesIntercambiados) {
         estado = estado.copy(
             estado = EstadoEjecucionFabrica.Error,

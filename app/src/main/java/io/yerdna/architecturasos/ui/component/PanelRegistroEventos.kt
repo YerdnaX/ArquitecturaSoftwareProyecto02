@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+// Muestra el listado de eventos registrados durante un experimento, o un mensaje si aun no hay eventos.
 @Composable
 fun PanelRegistroEventos(
     eventos: List<EventoExperimento>,
@@ -59,6 +60,7 @@ fun PanelRegistroEventos(
     }
 }
 
+// Renderiza una fila con la hora, tipo, origen y mensaje de un evento del registro.
 @Composable
 private fun FilaEvento(evento: EventoExperimento) {
     Row(
@@ -90,6 +92,7 @@ private fun FilaEvento(evento: EventoExperimento) {
     }
 }
 
+// Traduce el tipo de un evento (informacion, advertencia o error) a un texto legible.
 @Composable
 private fun textoTipoEvento(tipo: TipoEvento): String {
     return when (tipo) {
@@ -99,6 +102,7 @@ private fun textoTipoEvento(tipo: TipoEvento): String {
     }
 }
 
+// Elige el color asociado al tipo de un evento para resaltarlo visualmente.
 @Composable
 private fun colorTipoEvento(tipo: TipoEvento): Color {
     return when (tipo) {
@@ -108,6 +112,7 @@ private fun colorTipoEvento(tipo: TipoEvento): Color {
     }
 }
 
+// Traduce el origen de un evento (proceso principal o servicio) a un texto legible.
 @Composable
 private fun textoOrigenEvento(origen: OrigenEvento): String {
     return when (origen) {
@@ -116,10 +121,12 @@ private fun textoOrigenEvento(origen: OrigenEvento): String {
     }
 }
 
+// Formatea un timestamp en milisegundos como una hora legible HH:mm:ss.
 private fun formatoHoraEvento(timestamp: Long): String {
     return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
 }
 
+// Vista previa del panel de registro de eventos con ejemplos de cada tipo de evento.
 @Preview(showBackground = true)
 @Composable
 private fun PanelRegistroEventosPreview() {

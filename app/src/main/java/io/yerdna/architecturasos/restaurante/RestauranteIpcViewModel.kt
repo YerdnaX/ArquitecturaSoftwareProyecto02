@@ -17,14 +17,17 @@ class RestauranteIpcViewModel : ViewModel() {
 
     private var siguienteIdOrden = 1
 
+    // Actualiza el texto de la orden que el usuario esta escribiendo
     fun actualizarOrden(texto: String) {
         textoOrden = texto
     }
 
+    // Reemplaza el texto de la orden con uno de los ejemplos rapidos predefinidos
     fun cargarOrdenRapida(orden: String) {
         textoOrden = orden
     }
 
+    // Marca en el estado que la conexion con la cocina esta en proceso
     fun prepararConexion() {
         estado = estado.copy(
             estadoConexion = EstadoConexionRestaurante.Conectando,
@@ -33,6 +36,7 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Registra en el estado que la cocina quedo conectada, guardando su pid y contador de mensajes
     fun cocinaConectada(pidCocina: Int, timestamp: Long, mensajes: Int) {
         estado = estado.copy(
             pidCocina = pidCocina,
@@ -43,6 +47,7 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Valida que haya orden y conexion activa, asigna un id nuevo y deja el estado listo para enviar
     fun prepararEnvioOrden(): OrdenPreparada? {
         val orden = textoOrden.trim()
         if (orden.isEmpty() || estado.estadoConexion != EstadoConexionRestaurante.Conectado) {
@@ -68,6 +73,7 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Marca en el estado que la orden ya fue enviada y suma un mensaje intercambiado
     fun marcarOrdenEnviada() {
         estado = estado.copy(
             estadoOrden = EstadoOrdenRestaurante.Enviando,
@@ -76,6 +82,7 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Actualiza el estado con los datos de una orden que quedo en cola de espera
     fun marcarOrdenEnCola(evento: EventoOrdenRestaurante) {
         estado = estado.copy(
             pidCocina = evento.pidDestino,
@@ -92,6 +99,7 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Actualiza el estado con los datos de una orden que la cocina confirmo haber recibido
     fun marcarOrdenRecibida(evento: EventoOrdenRestaurante) {
         estado = estado.copy(
             pidCocina = evento.pidDestino,
@@ -106,6 +114,7 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Actualiza el estado con los datos de una orden que la cocina esta procesando
     fun marcarOrdenProcesando(evento: EventoOrdenRestaurante) {
         estado = estado.copy(
             pidCocina = evento.pidDestino,
@@ -120,6 +129,7 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Actualiza el estado con la respuesta final recibida y marca la orden como completada
     fun marcarRespuestaRecibida(evento: EventoOrdenRestaurante) {
         estado = estado.copy(
             pidCocina = evento.pidDestino,
@@ -136,6 +146,7 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Reinicia los datos de conexion y de orden en curso, marcando el resultado como cancelado si aplica
     fun marcarDesconectado(cancelado: Boolean = false) {
         estado = estado.copy(
             pidCocina = null,
@@ -157,10 +168,12 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Reinicia el estado por completo conservando unicamente el pid del mesero
     fun limpiarDatos() {
         estado = EstadoRestauranteIpc(pidMesero = estado.pidMesero)
     }
 
+    // Registra un error en el estado, marcando la conexion o la orden como fallida segun corresponda
     fun marcarError(mensaje: String, rompeConexion: Boolean, mensajes: Int = estado.mensajesIntercambiados) {
         estado = estado.copy(
             estadoConexion = if (rompeConexion) EstadoConexionRestaurante.Error else estado.estadoConexion,
@@ -172,11 +185,13 @@ class RestauranteIpcViewModel : ViewModel() {
         )
     }
 
+    // Indica si actualmente hay una conexion en curso o ya establecida con la cocina
     fun hayConexionActiva(): Boolean {
         return estado.estadoConexion == EstadoConexionRestaurante.Conectando ||
             estado.estadoConexion == EstadoConexionRestaurante.Conectado
     }
 
+    // Indica si existe alguna orden en algun punto del flujo de procesamiento
     fun hayTrabajoPendiente(): Boolean {
         return estado.estadoOrden == EstadoOrdenRestaurante.PreparandoMensaje ||
             estado.estadoOrden == EstadoOrdenRestaurante.Enviando ||
@@ -187,6 +202,7 @@ class RestauranteIpcViewModel : ViewModel() {
             estado.ordenesEnCola > 0
     }
 
+    // Indica si el estado conserva datos de una sesion anterior que valga la pena mostrar
     fun hayDatosPrevios(): Boolean {
         return estado.ordenActual.isNotBlank() ||
             estado.respuestaActual.isNotBlank() ||

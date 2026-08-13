@@ -20,6 +20,7 @@ class MonstruoMemoriaViewModel : ViewModel() {
         estado = aplicarMedicion(estado.copy(limiteSeguroMb = calcularLimiteSeguroMb()))
     }
 
+    // Reserva un bloque de memoria en un hilo aparte si no supera el limite seguro configurado
     fun reservar(tamanoMb: Int, onEvento: (EventoRegistroMonstruoMemoria) -> Unit) {
         if (estado.estadoEjecucion == EstadoEjecucionMemoria.Reservando) return
 
@@ -78,6 +79,7 @@ class MonstruoMemoriaViewModel : ViewModel() {
         }.start()
     }
 
+    // Libera todos los bloques de memoria reservados y actualiza el estado y las metricas
     fun liberarMemoria(onEvento: (EventoRegistroMonstruoMemoria) -> Unit) {
         if (estado.estadoEjecucion == EstadoEjecucionMemoria.Reservando) return
 
@@ -94,6 +96,7 @@ class MonstruoMemoriaViewModel : ViewModel() {
         onEvento(EventoRegistroMonstruoMemoria.LiberacionMemoria(bloquesLiberados))
     }
 
+    // Solicita al recolector de basura que se ejecute, sin garantizar cuando ocurrira
     fun solicitarGc(onEvento: (EventoRegistroMonstruoMemoria) -> Unit) {
         if (estado.estadoEjecucion == EstadoEjecucionMemoria.Reservando) return
 
@@ -107,6 +110,7 @@ class MonstruoMemoriaViewModel : ViewModel() {
         onEvento(EventoRegistroMonstruoMemoria.SolicitudGc)
     }
 
+    // Descarta todos los bloques reservados y restaura el estado del modulo a sus valores iniciales
     fun reiniciar(onEvento: (EventoRegistroMonstruoMemoria) -> Unit) {
         if (estado.estadoEjecucion == EstadoEjecucionMemoria.Reservando) return
 
@@ -121,20 +125,24 @@ class MonstruoMemoriaViewModel : ViewModel() {
         onEvento(EventoRegistroMonstruoMemoria.ReinicioConfirmado)
     }
 
+    // Actualiza en el estado la memoria disponible reportada por el sistema
     fun actualizarMedicionSistema(memoriaDisponibleSistemaMb: Long?) {
         estado = estado.copy(memoriaDisponibleSistemaMb = memoriaDisponibleSistemaMb)
     }
 
+    // Invalida cualquier operacion de reserva en curso y libera los bloques reservados
     fun limpiarRecursos() {
         idOperacionActiva++
         bloques.clear()
     }
 
+    // Libera los recursos reservados cuando el ViewModel se destruye
     override fun onCleared() {
         limpiarRecursos()
         super.onCleared()
     }
 
+    // Calcula el porcentaje de presion tras la nueva reserva y actualiza el estado y los eventos correspondientes
     private fun publicarResultadoReserva(
         bloque: BloqueMemoriaReservada,
         onEvento: (EventoRegistroMonstruoMemoria) -> Unit
@@ -170,6 +178,7 @@ class MonstruoMemoriaViewModel : ViewModel() {
         }
     }
 
+    // Mide el uso actual de memoria del runtime, registra una muestra historica y recalcula el estado visual
     private fun aplicarMedicion(base: EstadoMonstruoMemoria): EstadoMonstruoMemoria {
         val runtime = Runtime.getRuntime()
         val memoriaUsadaMb = bytesAMb(runtime.totalMemory() - runtime.freeMemory())
@@ -200,6 +209,7 @@ class MonstruoMemoriaViewModel : ViewModel() {
         )
     }
 
+    // Habilita o deshabilita los controles de la UI segun si hay una operacion en curso
     private fun recalcularControles(base: EstadoMonstruoMemoria): EstadoMonstruoMemoria {
         val puedeOperar = base.estadoEjecucion != EstadoEjecucionMemoria.Reservando
         return base.copy(
@@ -213,11 +223,13 @@ class MonstruoMemoriaViewModel : ViewModel() {
         )
     }
 
+    // Calcula el limite seguro de memoria a reservar como la mitad de la memoria maxima del runtime
     private fun calcularLimiteSeguroMb(): Int {
         val maximaMb = bytesAMb(Runtime.getRuntime().maxMemory()).toInt()
         return minOf(LIMITE_SEGURO_MAXIMO_MB, maximaMb / 2)
     }
 
+    // Determina el estado visual del monstruo segun el porcentaje de memoria reservada respecto al limite seguro
     private fun calcularEstadoVisual(memoriaReservadaMb: Int, limiteSeguroMb: Int): EstadoVisualMonstruo {
         if (limiteSeguroMb <= 0) return EstadoVisualMonstruo.Saludable
         val porcentaje = (memoriaReservadaMb * 100) / limiteSeguroMb
@@ -229,6 +241,7 @@ class MonstruoMemoriaViewModel : ViewModel() {
         }
     }
 
+    // Convierte una cantidad de bytes a megabytes
     private fun bytesAMb(bytes: Long): Long = bytes / BYTES_POR_MB
 
     companion object {

@@ -44,6 +44,7 @@ class ServicioFabricaRobots : Service() {
     private val eventosServicio = mutableListOf<EventoExperimento>()
 
     private val tareaEnsamblado = object : Runnable {
+        // Ensambla un robot y reprograma la siguiente iteración hasta alcanzar la cantidad configurada.
         override fun run() {
             if (robotsEnsamblados >= robotsConfigurados) {
                 finalizarCompletado()
@@ -68,10 +69,12 @@ class ServicioFabricaRobots : Service() {
         }
     }
 
+    // Expone el messenger para que los clientes se enlacen al servicio.
     override fun onBind(intent: Intent?): IBinder {
         return messenger.binder
     }
 
+    // Detiene las tareas pendientes y libera los recursos cuando el servicio se destruye.
     override fun onDestroy() {
         detenerTarea()
         publicarEventoRegistro(TipoEvento.Informacion, "Servicio destruido, recursos liberados")
@@ -84,6 +87,7 @@ class ServicioFabricaRobots : Service() {
     ) : Handler(Looper.getMainLooper()) {
         private val referenciaServicio = WeakReference(servicio)
 
+        // Despacha los mensajes recibidos del cliente a la acción correspondiente del servicio.
         override fun handleMessage(msg: Message) {
             val servicio = referenciaServicio.get() ?: return
             when (msg.what) {
@@ -97,6 +101,7 @@ class ServicioFabricaRobots : Service() {
         }
     }
 
+    // Guarda la referencia del cliente registrado y le informa el PID de este proceso.
     private fun registrarCliente(messengerCliente: Messenger?) {
         cliente = messengerCliente
         mensajesIntercambiados += 1
@@ -110,6 +115,7 @@ class ServicioFabricaRobots : Service() {
         )
     }
 
+    // Inicia el ciclo de ensamblado de robots con la cantidad objetivo indicada.
     private fun iniciarFabrica(cantidadRobots: Int) {
         eventosServicio.clear()
         robotsConfigurados = cantidadRobots.coerceAtLeast(ROBOTS_MINIMOS)
@@ -125,6 +131,7 @@ class ServicioFabricaRobots : Service() {
         handler.postDelayed(tareaEnsamblado, INTERVALO_ROBOT_MS)
     }
 
+    // Detiene el ensamblado por solicitud del usuario y finaliza el servicio.
     private fun detenerPorUsuario() {
         mensajesIntercambiados += 1
         publicarEventoRegistro(TipoEvento.Advertencia, "Detencion solicitada")
@@ -133,6 +140,7 @@ class ServicioFabricaRobots : Service() {
         stopSelf()
     }
 
+    // Detiene el ensamblado al alcanzar la cantidad objetivo y finaliza el servicio.
     private fun finalizarCompletado() {
         publicarEventoRegistro(
             TipoEvento.Informacion,
@@ -143,10 +151,12 @@ class ServicioFabricaRobots : Service() {
         stopSelf()
     }
 
+    // Cancela la tarea de ensamblado que estuviera programada.
     private fun detenerTarea() {
         handler.removeCallbacks(tareaEnsamblado)
     }
 
+    // Envía al cliente el estado actual de ejecución de la fábrica.
     private fun enviarEstado(estado: EstadoEjecucionFabrica) {
         enviarMensaje(
             tipo = MSG_ESTADO_FABRICA,
@@ -158,6 +168,7 @@ class ServicioFabricaRobots : Service() {
         )
     }
 
+    // Registra y envía al cliente un mensaje de error ocurrido en el servicio.
     private fun enviarError(mensaje: String) {
         publicarEventoRegistro(TipoEvento.Error, mensaje)
         enviarMensaje(
@@ -168,6 +179,7 @@ class ServicioFabricaRobots : Service() {
         )
     }
 
+    // Envía un mensaje al cliente registrado, contando los mensajes intercambiados.
     private fun enviarMensaje(tipo: Int, datos: Bundle = Bundle()) {
         val destino = cliente ?: return
         mensajesIntercambiados += 1
@@ -182,6 +194,7 @@ class ServicioFabricaRobots : Service() {
         }
     }
 
+    // Registra un evento local y lo envía al cliente como mensaje de registro.
     private fun publicarEventoRegistro(
         tipo: TipoEvento,
         mensaje: String,

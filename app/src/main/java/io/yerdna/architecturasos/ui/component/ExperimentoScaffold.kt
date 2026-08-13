@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import io.yerdna.architecturasos.R
 import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
 
+// Estructura comun de pantalla con barra superior (titulo, boton volver y acciones) y el contenido del experimento.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExperimentoScaffold(
@@ -51,6 +52,7 @@ fun ExperimentoScaffold(
     )
 }
 
+// Vista previa del scaffold generico usado por las pantallas de experimentos.
 @Preview(showBackground = true)
 @Composable
 private fun ExperimentoScaffoldPreview() {

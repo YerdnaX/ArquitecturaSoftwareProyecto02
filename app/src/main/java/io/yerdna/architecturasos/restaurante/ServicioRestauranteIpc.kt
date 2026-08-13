@@ -69,10 +69,12 @@ class ServicioRestauranteIpc : Service() {
         procesarSiguienteOrden()
     }
 
+    // Entrega el binder del messenger para que los clientes puedan enlazarse al servicio
     override fun onBind(intent: Intent?): IBinder {
         return messenger.binder
     }
 
+    // Limpia el trabajo pendiente antes de que el sistema destruya el servicio
     override fun onDestroy() {
         limpiarTrabajo("Servicio destruido")
         super.onDestroy()
@@ -83,6 +85,7 @@ class ServicioRestauranteIpc : Service() {
     ) : Handler(Looper.getMainLooper()) {
         private val referenciaServicio = WeakReference(servicio)
 
+        // Despacha cada mensaje IPC entrante hacia la operacion correspondiente del servicio
         override fun handleMessage(msg: Message) {
             val servicio = referenciaServicio.get() ?: return
             when (msg.what) {
@@ -94,6 +97,7 @@ class ServicioRestauranteIpc : Service() {
         }
     }
 
+    // Guarda el messenger del cliente que se registra y le confirma que la cocina esta conectada
     private fun registrarCliente(messengerCliente: Messenger?) {
         cliente = messengerCliente
         mensajesIntercambiados += 1
@@ -108,6 +112,7 @@ class ServicioRestauranteIpc : Service() {
         )
     }
 
+    // Extrae la orden del mensaje recibido y la procesa de inmediato o la deja en cola segun corresponda
     private fun recibirOrden(msg: Message) {
         val ordenTexto = msg.data.getString(KEY_ORDEN).orEmpty().trim()
         if (ordenTexto.isBlank()) {
@@ -137,6 +142,7 @@ class ServicioRestauranteIpc : Service() {
         }
     }
 
+    // Avisa que la orden actual entro en preparacion y agenda la tarea que simula su demora
     private fun procesarOrdenActual() {
         val orden = ordenActual ?: return
         publicarEventoRegistro(TipoEvento.Informacion, "Orden procesando ${orden.id}")
@@ -145,6 +151,7 @@ class ServicioRestauranteIpc : Service() {
         handler.postDelayed(tareaPreparacion, DEMORA_PREPARACION_MS)
     }
 
+    // Toma la siguiente orden en cola y la procesa, o detiene el servicio si ya no hay ordenes
     private fun procesarSiguienteOrden() {
         val siguiente = if (colaOrdenes.isEmpty()) {
             null
@@ -161,12 +168,14 @@ class ServicioRestauranteIpc : Service() {
         procesarOrdenActual()
     }
 
+    // Atiende la desconexion solicitada por el mesero, limpia el trabajo y detiene el servicio
     private fun desconectarCliente() {
         publicarEventoRegistro(TipoEvento.Advertencia, "Desconexion solicitada por el mesero")
         limpiarTrabajo("Desconexion: orden actual cancelada y cola vaciada")
         stopSelf()
     }
 
+    // Cancela la tarea pendiente, vacia la orden actual y la cola, y registra el motivo de la limpieza
     private fun limpiarTrabajo(motivo: String) {
         handler.removeCallbacks(tareaPreparacion)
         if (ordenActual != null) {
@@ -185,6 +194,7 @@ class ServicioRestauranteIpc : Service() {
         eventosServicio.clear()
     }
 
+    // Registra y envia al cliente un mensaje de error IPC con el detalle indicado
     private fun enviarError(mensaje: String) {
         publicarEventoRegistro(TipoEvento.Error, mensaje)
         enviarMensaje(
@@ -196,6 +206,7 @@ class ServicioRestauranteIpc : Service() {
         )
     }
 
+    // Arma el mensaje IPC con los datos de la orden y del estado de la cola, y lo envia al cliente
     private fun enviarMensaje(
         tipo: Int,
         orden: OrdenRestaurante? = null,
@@ -229,6 +240,7 @@ class ServicioRestauranteIpc : Service() {
         }
     }
 
+    // Guarda el evento localmente y lo envia al cliente como mensaje IPC de registro
     private fun publicarEventoRegistro(
         tipo: TipoEvento,
         mensaje: String,

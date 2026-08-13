@@ -14,6 +14,7 @@ class CarreraBoletosViewModel : ViewModel() {
     private var ejecutor: EjecutorCarreraBoletos? = null
     private var registrarEvento: ((EventoRegistroCarreraBoletos) -> Unit)? = null
 
+    // Actualiza la cantidad inicial de boletos y reinicia compradores/métricas si no hay ejecución activa
     fun actualizarBoletosIniciales(valor: Int) {
         if (estado.ejecucionActiva) return
         val config = estado.configuracion.copy(boletosIniciales = valor).normalizada()
@@ -28,6 +29,7 @@ class CarreraBoletosViewModel : ViewModel() {
         )
     }
 
+    // Actualiza la cantidad total de compradores y reinicia compradores/métricas si no hay ejecución activa
     fun actualizarCompradoresTotales(valor: Int) {
         if (estado.ejecucionActiva) return
         val config = estado.configuracion.copy(compradoresTotales = valor).normalizada()
@@ -42,19 +44,23 @@ class CarreraBoletosViewModel : ViewModel() {
         )
     }
 
+    // Inicia la simulación en modo sin mutex, donde puede producirse una condición de carrera
     fun iniciarSinMutex(onEvento: (EventoRegistroCarreraBoletos) -> Unit) {
         iniciar(ModoCarreraBoletos.SinMutex, onEvento)
     }
 
+    // Inicia la simulación en modo con mutex, donde el acceso al recurso está sincronizado
     fun iniciarConMutex(onEvento: (EventoRegistroCarreraBoletos) -> Unit) {
         iniciar(ModoCarreraBoletos.ConMutex, onEvento)
     }
 
+    // Solicita la cancelación de la ejecución activa
     fun cancelar() {
         if (!estado.ejecucionActiva) return
         ejecutor?.cancelar()
     }
 
+    // Reinicia el estado a sus valores iniciales si no hay una ejecución activa
     fun reiniciar() {
         if (estado.ejecucionActiva) return
         val config = estado.configuracion.normalizada()
@@ -69,6 +75,7 @@ class CarreraBoletosViewModel : ViewModel() {
         )
     }
 
+    // Libera el ejecutor y los datos asociados a la ejecución activa
     fun limpiarRecursos() {
         ejecutor?.limpiar()
         ejecutor = null
@@ -76,6 +83,7 @@ class CarreraBoletosViewModel : ViewModel() {
         registrarEvento = null
     }
 
+    // Indica si el estado actual permite iniciar una nueva ejecución
     fun puedeIniciar(): Boolean {
         return estado.fase == FaseCarreraBoletos.Inactivo ||
             estado.fase == FaseCarreraBoletos.Exitoso ||
@@ -83,18 +91,22 @@ class CarreraBoletosViewModel : ViewModel() {
             estado.fase == FaseCarreraBoletos.Error
     }
 
+    // Indica si hay una ejecución en curso que pueda cancelarse
     fun puedeCancelar(): Boolean {
         return estado.ejecucionActiva
     }
 
+    // Indica si el estado actual permite reiniciar
     fun puedeReiniciar(): Boolean {
         return !estado.ejecucionActiva
     }
 
+    // Indica si actualmente hay una ejecución en curso
     fun hayEjecucionActiva(): Boolean {
         return estado.ejecucionActiva
     }
 
+    // Prepara el estado y arranca el ejecutor en el modo indicado, registrando sus callbacks
     private fun iniciar(
         modo: ModoCarreraBoletos,
         onEvento: (EventoRegistroCarreraBoletos) -> Unit
@@ -135,6 +147,7 @@ class CarreraBoletosViewModel : ViewModel() {
 
         ejecutor = EjecutorCarreraBoletos(
             callbacks = object : EjecutorCarreraBoletos.Callbacks {
+                // Actualiza el comprador correspondiente dentro del estado y recalcula cuántos están esperando
                 override fun onCompradorActualizado(idEjecucion: Int, comprador: CompradorBoleto) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     estado = estado.copy(
@@ -145,6 +158,7 @@ class CarreraBoletosViewModel : ViewModel() {
                     actualizarCompradoresEsperando()
                 }
 
+                // Actualiza las métricas del estado con la cantidad de compradores esperando el mutex
                 override fun onMetricasActualizadas(idEjecucion: Int, metricas: MetricasCarreraBoletos) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     estado = estado.copy(
@@ -156,6 +170,7 @@ class CarreraBoletosViewModel : ViewModel() {
                     )
                 }
 
+                // Traduce los eventos técnicos del ejecutor en eventos de registro para la UI
                 override fun onEvento(idEjecucion: Int, evento: EventoTecnicoCarreraBoletos) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     when (evento) {
@@ -191,6 +206,7 @@ class CarreraBoletosViewModel : ViewModel() {
                     }
                 }
 
+                // Marca la ejecución como exitosa y guarda el resultado según el modo utilizado
                 override fun onFinalizada(idEjecucion: Int, resultado: ResultadoCarreraBoletos) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     val compradoresFinales = estado.compradores.map {
@@ -228,6 +244,7 @@ class CarreraBoletosViewModel : ViewModel() {
                     emitir(EventoRegistroCarreraBoletos.EjecucionFinalizada(resultado))
                 }
 
+                // Marca la ejecución como cancelada y ajusta el estado de los compradores
                 override fun onCancelada(idEjecucion: Int) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     estado = estado.copy(
@@ -253,6 +270,7 @@ class CarreraBoletosViewModel : ViewModel() {
                     emitir(EventoRegistroCarreraBoletos.EjecucionCancelada)
                 }
 
+                // Marca la ejecución como fallida, cancela el ejecutor y guarda el mensaje de error
                 override fun onError(idEjecucion: Int, mensaje: String?, throwable: Throwable?) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     ejecutor?.cancelar()
@@ -278,6 +296,7 @@ class CarreraBoletosViewModel : ViewModel() {
         ejecutor?.iniciar(idEjecucion, config, modo)
     }
 
+    // Recalcula en las métricas cuántos compradores están esperando el mutex
     private fun actualizarCompradoresEsperando() {
         estado = estado.copy(
             metricas = estado.metricas.copy(
@@ -288,19 +307,23 @@ class CarreraBoletosViewModel : ViewModel() {
         )
     }
 
+    // Limpia las referencias asociadas a la ejecución activa
     private fun cerrarEjecucion() {
         ejecutor = null
         idEjecucionActiva = null
     }
 
+    // Envía un evento de registro al callback suscrito, si existe
     private fun emitir(evento: EventoRegistroCarreraBoletos) {
         registrarEvento?.invoke(evento)
     }
 
+    // Verifica si el id de ejecución dado corresponde a la ejecución actualmente activa
     private fun esEjecucionActiva(idEjecucion: Int): Boolean {
         return idEjecucionActiva == idEjecucion
     }
 
+    // Libera los recursos del ejecutor cuando el ViewModel se destruye
     override fun onCleared() {
         limpiarRecursos()
         super.onCleared()

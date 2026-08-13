@@ -14,6 +14,7 @@ class BancoCaoticoViewModel : ViewModel() {
     private var ejecutor: EjecutorBancoCaotico? = null
     private var registrarEvento: ((EventoRegistroBancoCaotico) -> Unit)? = null
 
+    // Actualiza la cantidad de cajeros configurada y reinicia la lista de cajeros si no hay ejecución activa
     fun actualizarCantidadCajeros(valor: Int) {
         if (estado.ejecucionActiva) return
         val config = estado.configuracion.copy(cantidadCajeros = valor).normalizada()
@@ -23,6 +24,7 @@ class BancoCaoticoViewModel : ViewModel() {
         )
     }
 
+    // Actualiza la cantidad de operaciones por cajero si no hay una ejecución activa
     fun actualizarOperacionesPorCajero(valor: Int) {
         if (estado.ejecucionActiva) return
         estado = estado.copy(
@@ -30,15 +32,18 @@ class BancoCaoticoViewModel : ViewModel() {
         )
     }
 
+    // Inicia una nueva ejecución usando la configuración actual normalizada
     fun iniciar(onEvento: (EventoRegistroBancoCaotico) -> Unit) {
         iniciarConConfiguracion(estado.configuracion.normalizada(), onEvento)
     }
 
+    // Solicita la cancelación de la ejecución activa
     fun cancelar() {
         if (!estado.ejecucionActiva) return
         ejecutor?.cancelar()
     }
 
+    // Reinicia el estado a sus valores iniciales si no hay una ejecución activa
     fun reiniciar() {
         if (estado.ejecucionActiva) return
         val config = estado.configuracion.normalizada()
@@ -48,6 +53,7 @@ class BancoCaoticoViewModel : ViewModel() {
         )
     }
 
+    // Libera el ejecutor y los datos asociados a la ejecución activa
     fun limpiarRecursos() {
         ejecutor?.limpiar()
         ejecutor = null
@@ -55,6 +61,7 @@ class BancoCaoticoViewModel : ViewModel() {
         registrarEvento = null
     }
 
+    // Indica si el estado actual permite iniciar una nueva ejecución
     fun puedeIniciar(): Boolean {
         return estado.fase == FaseBancoCaotico.Inactivo ||
             estado.fase == FaseBancoCaotico.Exitoso ||
@@ -62,18 +69,22 @@ class BancoCaoticoViewModel : ViewModel() {
             estado.fase == FaseBancoCaotico.Error
     }
 
+    // Indica si hay una ejecución en curso que pueda cancelarse
     fun puedeCancelar(): Boolean {
         return estado.fase == FaseBancoCaotico.Ejecutando
     }
 
+    // Indica si el estado actual permite reiniciar
     fun puedeReiniciar(): Boolean {
         return estado.fase != FaseBancoCaotico.Ejecutando
     }
 
+    // Indica si actualmente hay una ejecución en curso
     fun hayEjecucionActiva(): Boolean {
         return estado.ejecucionActiva
     }
 
+    // Prepara el estado y arranca el ejecutor con la configuración indicada, registrando sus callbacks
     private fun iniciarConConfiguracion(
         configuracion: ConfiguracionBancoCaotico,
         onEvento: (EventoRegistroBancoCaotico) -> Unit
@@ -100,6 +111,7 @@ class BancoCaoticoViewModel : ViewModel() {
 
         ejecutor = EjecutorBancoCaotico(
             callbacks = object : EjecutorBancoCaotico.Callbacks {
+                // Actualiza el cajero correspondiente dentro del estado cuando el ejecutor reporta un cambio
                 override fun onCajeroActualizado(idEjecucion: Int, cajero: CajeroBancoCaotico) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     estado = estado.copy(
@@ -109,6 +121,7 @@ class BancoCaoticoViewModel : ViewModel() {
                     )
                 }
 
+                // Traduce los eventos técnicos del ejecutor en eventos de registro para la UI
                 override fun onEvento(idEjecucion: Int, evento: EventoBancoCaotico) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     when (evento) {
@@ -133,6 +146,7 @@ class BancoCaoticoViewModel : ViewModel() {
                     }
                 }
 
+                // Marca la ejecución como exitosa y guarda el resultado final
                 override fun onFinalizada(idEjecucion: Int, resultado: ResultadoBancoCaotico) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     estado = estado.copy(
@@ -152,6 +166,7 @@ class BancoCaoticoViewModel : ViewModel() {
                     emitir(EventoRegistroBancoCaotico.EjecucionFinalizada(resultado))
                 }
 
+                // Marca la ejecución como cancelada y ajusta el estado de los cajeros
                 override fun onCancelada(idEjecucion: Int) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     estado = estado.copy(
@@ -169,6 +184,7 @@ class BancoCaoticoViewModel : ViewModel() {
                     emitir(EventoRegistroBancoCaotico.EjecucionCancelada)
                 }
 
+                // Marca la ejecución como fallida, cancela el ejecutor y guarda el mensaje de error
                 override fun onError(idEjecucion: Int, mensaje: String?, throwable: Throwable?) {
                     if (!esEjecucionActiva(idEjecucion)) return
                     ejecutor?.cancelar()
@@ -192,19 +208,23 @@ class BancoCaoticoViewModel : ViewModel() {
         ejecutor?.iniciar(idEjecucion, config)
     }
 
+    // Limpia las referencias asociadas a la ejecución activa
     private fun cerrarEjecucion() {
         ejecutor = null
         idEjecucionActiva = null
     }
 
+    // Envía un evento de registro al callback suscrito, si existe
     private fun emitir(evento: EventoRegistroBancoCaotico) {
         registrarEvento?.invoke(evento)
     }
 
+    // Verifica si el id de ejecución dado corresponde a la ejecución actualmente activa
     private fun esEjecucionActiva(idEjecucion: Int): Boolean {
         return idEjecucionActiva == idEjecucion
     }
 
+    // Libera los recursos del ejecutor cuando el ViewModel se destruye
     override fun onCleared() {
         limpiarRecursos()
         super.onCleared()

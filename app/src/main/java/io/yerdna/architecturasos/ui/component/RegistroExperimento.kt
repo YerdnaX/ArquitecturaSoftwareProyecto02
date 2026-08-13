@@ -25,19 +25,23 @@ class EstadoRegistroExperimento internal constructor(
     private val onCerrar: () -> Unit,
     private val onLimpiarInterno: () -> Unit
 ) {
+    // Marca la hoja de registro de eventos como visible.
     fun abrir() {
         onAbrir()
     }
 
+    // Marca la hoja de registro de eventos como oculta.
     fun cerrar() {
         onCerrar()
     }
 
+    // Borra todos los eventos acumulados en el logger del experimento.
     fun limpiar() {
         onLimpiarInterno()
     }
 }
 
+// Crea y recuerda el estado del registro de eventos (logger, eventos y visibilidad) asociado a un experimento.
 @Composable
 fun rememberRegistroExperimento(tag: String): EstadoRegistroExperimento {
     var eventos by remember { mutableStateOf(emptyList<EventoExperimento>()) }
@@ -59,6 +63,7 @@ fun rememberRegistroExperimento(tag: String): EstadoRegistroExperimento {
     )
 }
 
+// Muestra el boton de la barra superior que abre la hoja con el registro de eventos.
 @Composable
 fun BotonRegistroEventos(
     onClick: () -> Unit
@@ -71,6 +76,7 @@ fun BotonRegistroEventos(
     }
 }
 
+// Muestra la hoja modal inferior con el panel de eventos cuando esta visible; no dibuja nada si esta oculta.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HojaRegistroEventos(

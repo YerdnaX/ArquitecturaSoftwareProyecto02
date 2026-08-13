@@ -39,10 +39,15 @@ class ControladorFabricaRobots(
     private val callbacks: Callbacks
 ) {
     interface Callbacks {
+        // Notifica que se obtuvo el PID del proceso secundario de la fábrica.
         fun onPidFabrica(pid: Int, mensajes: Int)
+        // Notifica un cambio en el estado de ejecución de la fábrica.
         fun onEstadoFabrica(estado: EstadoEjecucionFabrica, mensajes: Int)
+        // Notifica que se ensambló un nuevo robot en la fábrica.
         fun onRobotEnsamblado(robots: Int, mensajes: Int)
+        // Notifica que ocurrió un error en la comunicación o ejecución de la fábrica.
         fun onError(mensaje: String, mensajes: Int)
+        // Notifica un nuevo evento de registro generado por la fábrica.
         fun onEventoRegistro(evento: EventoExperimento)
     }
 
@@ -55,6 +60,7 @@ class ControladorFabricaRobots(
     private var cantidadPendiente: Int? = null
 
     private val conexion = object : ServiceConnection {
+        // Registra el cliente ante el servicio y envía el inicio pendiente cuando la conexión se establece.
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             enlazado = true
             messengerServicio = Messenger(service)
@@ -65,12 +71,14 @@ class ControladorFabricaRobots(
             }
         }
 
+        // Limpia la referencia al servicio cuando la conexión se pierde inesperadamente.
         override fun onServiceDisconnected(name: ComponentName?) {
             enlazado = false
             messengerServicio = null
         }
     }
 
+    // Inicia y enlaza el servicio de la fábrica secundaria con la cantidad de robots indicada.
     fun iniciar(cantidadRobots: Int) {
         liberado = false
         cantidadPendiente = cantidadRobots
@@ -84,15 +92,18 @@ class ControladorFabricaRobots(
         }
     }
 
+    // Solicita al servicio detener la fábrica y libera la conexión con él.
     fun detener() {
         enviarMensaje(MSG_DETENER_FABRICA)
         liberar(detenerServicio = true)
     }
 
+    // Libera la conexión con el servicio y lo detiene.
     fun liberar() {
         liberar(detenerServicio = true)
     }
 
+    // Desenlaza el servicio y opcionalmente lo detiene, evitando liberar los recursos más de una vez.
     private fun liberar(detenerServicio: Boolean) {
         if (liberado) return
         liberado = true
@@ -115,10 +126,12 @@ class ControladorFabricaRobots(
         }
     }
 
+    // Envía al servicio el mensaje de registro del cliente, adjuntando el messenger de respuesta.
     private fun enviarRegistroCliente() {
         enviarMensaje(MSG_REGISTRAR_CLIENTE) { replyTo = messengerCliente }
     }
 
+    // Envía al servicio el mensaje para iniciar la fábrica con la cantidad de robots indicada.
     private fun enviarInicio(cantidadRobots: Int) {
         enviarMensaje(MSG_INICIAR_FABRICA) {
             data = Bundle().apply {
@@ -127,6 +140,7 @@ class ControladorFabricaRobots(
         }
     }
 
+    // Envía un mensaje al servicio y notifica un error si la comunicación remota falla.
     private fun enviarMensaje(tipo: Int, configurar: Message.() -> Unit = {}) {
         val destino = messengerServicio ?: return
         try {
@@ -138,6 +152,7 @@ class ControladorFabricaRobots(
         }
     }
 
+    // Construye y notifica un evento de registro originado en el proceso principal.
     private fun registrarEvento(tipo: TipoEvento, mensaje: String) {
         callbacks.onEventoRegistro(
             EventoExperimento(
@@ -154,6 +169,7 @@ class ControladorFabricaRobots(
     ) : Handler(Looper.getMainLooper()) {
         private val referenciaControlador = WeakReference(controlador)
 
+        // Procesa los mensajes recibidos del servicio y despacha el callback correspondiente.
         override fun handleMessage(msg: Message) {
             val controlador = referenciaControlador.get() ?: return
             val mensajes = msg.data.getInt(KEY_MENSAJES_INTERCAMBIADOS, 0)
@@ -182,6 +198,7 @@ class ControladorFabricaRobots(
             }
         }
 
+        // Convierte los datos de un mensaje recibido en un evento de experimento para la UI.
         private fun Message.aEventoRegistro(): EventoExperimento {
             val tipo = runCatching {
                 TipoEvento.valueOf(data.getString(KEY_EVENTO_TIPO).orEmpty())
@@ -195,6 +212,7 @@ class ControladorFabricaRobots(
             )
         }
 
+        // Convierte el texto recibido en el origen de evento correspondiente, usando Servicio por defecto.
         private fun obtenerOrigen(valor: String?): OrigenEvento {
             return runCatching {
                 OrigenEvento.valueOf(valor.orEmpty())
@@ -202,6 +220,7 @@ class ControladorFabricaRobots(
         }
     }
 
+    // Convierte el texto recibido en el estado de ejecución correspondiente, usando Error por defecto.
     private fun obtenerEstado(valor: String?): EstadoEjecucionFabrica {
         return EstadoEjecucionFabrica.entries.firstOrNull { it.name == valor }
             ?: EstadoEjecucionFabrica.Error

@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 const val TAG_CARRERA_HILOS = "OSPlayground/ThreadRace"
 
+// Determina cuántas operaciones debe realizar cada hilo según el nivel de trabajo configurado.
 internal fun operacionesPorHiloCarrera(nivelTrabajo: Int): Long {
     return when (nivelTrabajo.coerceIn(1, 5)) {
         1 -> 500_000L
@@ -21,9 +22,13 @@ class EjecutorCarreraHilos(
     private val callbacks: Callbacks
 ) {
     interface Callbacks {
+        // Notifica que el progreso de un hilo específico cambió.
         fun onHiloActualizado(idEjecucion: Int, progreso: ProgresoHiloCarrera)
+        // Notifica un evento ocurrido durante la ejecución de un hilo.
         fun onEvento(idEjecucion: Int, evento: EventoCarreraHilos)
+        // Notifica que la ejecución completa de la carrera de hilos finalizó.
         fun onFinalizada(idEjecucion: Int, resumen: ResumenEjecucionCarrera)
+        // Notifica que ocurrió un error durante la ejecución de un hilo.
         fun onError(idEjecucion: Int, idHilo: Int, mensaje: String?, throwable: Throwable?)
     }
 
@@ -32,6 +37,7 @@ class EjecutorCarreraHilos(
     private val hilos = mutableListOf<Thread>()
     private var coordinador: Thread? = null
 
+    // Crea y lanza los hilos de trabajo junto con un hilo coordinador que espera a que todos terminen.
     fun iniciar(idEjecucion: Int, configuracion: ConfiguracionCarreraHilos) {
         cancelar()
         cancelada.set(false)
@@ -95,10 +101,12 @@ class EjecutorCarreraHilos(
         coordinador?.start()
     }
 
+    // Marca la ejecución como cancelada para que los hilos en curso se detengan.
     fun cancelar() {
         cancelada.set(true)
     }
 
+    // Ejecuta el trabajo simulado de un hilo, publicando su progreso periódicamente por bloques.
     private fun ejecutarHilo(
         idEjecucion: Int,
         idHilo: Int,
@@ -195,6 +203,7 @@ class EjecutorCarreraHilos(
         }
     }
 
+    // Ejecuta la acción en el hilo principal, directamente si ya está en él o mediante el handler.
     private fun publicar(accion: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             accion()
@@ -203,6 +212,7 @@ class EjecutorCarreraHilos(
         }
     }
 
+    // Realiza un cálculo aritmético simulado usado para generar carga de trabajo en cada operación.
     private fun procesarNumero(checksumActual: Long, numero: Long): Long {
         var valor = checksumActual xor numero
         valor = (valor * 31L + numero * 17L) % 1_000_000_007L

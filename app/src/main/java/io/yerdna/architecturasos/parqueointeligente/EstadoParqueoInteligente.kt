@@ -14,6 +14,7 @@ data class ConfiguracionParqueoInteligente(
     val espaciosDisponibles: Int = ESPACIOS_INICIALES,
     val vehiculosTotales: Int = VEHICULOS_INICIALES
 ) {
+    // Ajusta espacios y vehiculos a los rangos minimo y maximo permitidos
     fun normalizada(): ConfiguracionParqueoInteligente {
         return copy(
             espaciosDisponibles = espaciosDisponibles.coerceIn(MIN_ESPACIOS, MAX_ESPACIOS),
@@ -60,6 +61,7 @@ sealed class EventoRegistroParqueoInteligente {
     data class ErrorTecnico(val mensaje: String?) : EventoRegistroParqueoInteligente()
 }
 
+// Crea la lista inicial de vehiculos en espera segun la configuracion normalizada
 fun vehiculosIniciales(configuracion: ConfiguracionParqueoInteligente): List<VehiculoParqueoInteligente> {
     return (1..configuracion.normalizada().vehiculosTotales).map { id ->
         VehiculoParqueoInteligente(

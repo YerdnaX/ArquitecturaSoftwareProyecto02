@@ -16,6 +16,7 @@ data class ConfiguracionCarreraBoletos(
     val boletosIniciales: Int = BOLETOS_INICIALES,
     val compradoresTotales: Int = COMPRADORES_INICIALES
 ) {
+    // Ajusta la configuración para que sus valores queden dentro de los rangos permitidos
     fun normalizada(): ConfiguracionCarreraBoletos {
         return copy(
             boletosIniciales = boletosIniciales.coerceIn(MIN_BOLETOS, MAX_BOLETOS),
@@ -64,6 +65,7 @@ sealed class EventoRegistroCarreraBoletos {
     data class ErrorTecnico(val mensaje: String?) : EventoRegistroCarreraBoletos()
 }
 
+// Genera la lista inicial de compradores en estado de espera según la configuración dada
 fun compradoresIniciales(configuracion: ConfiguracionCarreraBoletos): List<CompradorBoleto> {
     return (1..configuracion.normalizada().compradoresTotales).map { id ->
         CompradorBoleto(

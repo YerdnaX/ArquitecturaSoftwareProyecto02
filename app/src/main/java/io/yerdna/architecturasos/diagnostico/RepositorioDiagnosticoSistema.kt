@@ -6,6 +6,7 @@ private const val TAGS_LOGCAT_TODOS =
     "adb logcat -d -s OSPlayground/FabricaRobots OSPlayground/BinderIPC OSPlayground/SocketLab " +
         "OSPlayground/ThreadRace OSPlayground/ChaosBank OSPlayground/Mutex OSPlayground/Semaphore OSPlayground/Memory"
 
+// Devuelve el catalogo completo de herramientas de diagnostico disponibles en la app
 fun obtenerHerramientasDiagnostico(): List<HerramientaDiagnostico> {
     return listOf(
         herramientaAndroidProfiler(),
@@ -21,6 +22,7 @@ fun obtenerHerramientasDiagnostico(): List<HerramientaDiagnostico> {
     )
 }
 
+// Describe la herramienta Android Profiler y sus experimentos relacionados
 private fun herramientaAndroidProfiler() = HerramientaDiagnostico(
     id = "android_profiler",
     nombreResId = R.string.diagnostico_herramienta_android_profiler_nombre,
@@ -41,6 +43,7 @@ private fun herramientaAndroidProfiler() = HerramientaDiagnostico(
     )
 )
 
+// Describe la herramienta adb shell top y sus comandos y experimentos relacionados
 private fun herramientaAdbTop() = HerramientaDiagnostico(
     id = "adb_shell_top",
     nombreResId = R.string.diagnostico_herramienta_adb_top_nombre,
@@ -73,6 +76,7 @@ private fun herramientaAdbTop() = HerramientaDiagnostico(
     )
 )
 
+// Describe la herramienta adb logcat, su comando de filtrado por tags y todos los experimentos que aplica
 private fun herramientaAdbLogcat() = HerramientaDiagnostico(
     id = "adb_logcat",
     nombreResId = R.string.diagnostico_herramienta_adb_logcat_nombre,
@@ -92,6 +96,7 @@ private fun herramientaAdbLogcat() = HerramientaDiagnostico(
     experimentosRelacionados = todosLosExperimentos()
 )
 
+// Describe la herramienta de inspeccion de Binder IPC y su experimento relacionado
 private fun herramientaBinderIpc() = HerramientaDiagnostico(
     id = "binder_ipc",
     nombreResId = R.string.diagnostico_herramienta_binder_ipc_nombre,
@@ -108,6 +113,7 @@ private fun herramientaBinderIpc() = HerramientaDiagnostico(
     )
 )
 
+// Describe la herramienta de inspeccion de sockets y su experimento relacionado
 private fun herramientaSockets() = HerramientaDiagnostico(
     id = "sockets",
     nombreResId = R.string.diagnostico_herramienta_sockets_nombre,
@@ -124,6 +130,7 @@ private fun herramientaSockets() = HerramientaDiagnostico(
     )
 )
 
+// Describe la herramienta Perfetto para trazas de sistema y su experimento relacionado
 private fun herramientaPerfetto() = HerramientaDiagnostico(
     id = "perfetto_system_trace",
     nombreResId = R.string.diagnostico_herramienta_perfetto_nombre,
@@ -140,6 +147,7 @@ private fun herramientaPerfetto() = HerramientaDiagnostico(
     )
 )
 
+// Describe la herramienta dumpsys, sus comandos de memoria y servicios y los experimentos relacionados
 private fun herramientaDumpsys() = HerramientaDiagnostico(
     id = "dumpsys",
     nombreResId = R.string.diagnostico_herramienta_dumpsys_nombre,
@@ -184,6 +192,7 @@ private fun herramientaDumpsys() = HerramientaDiagnostico(
     )
 )
 
+// Describe la herramienta adb general, sus comandos basicos y todos los experimentos que aplica
 private fun herramientaAdb() = HerramientaDiagnostico(
     id = "adb",
     nombreResId = R.string.diagnostico_herramienta_adb_nombre,
@@ -215,6 +224,7 @@ private fun herramientaAdb() = HerramientaDiagnostico(
     experimentosRelacionados = todosLosExperimentos()
 )
 
+// Describe la herramienta dumpstate para generar reportes completos del sistema
 private fun herramientaDumpstate() = HerramientaDiagnostico(
     id = "dumpstate",
     nombreResId = R.string.diagnostico_herramienta_dumpstate_nombre,
@@ -225,6 +235,7 @@ private fun herramientaDumpstate() = HerramientaDiagnostico(
     limitacionResId = R.string.diagnostico_herramienta_dumpstate_limitacion
 )
 
+// Describe la herramienta Battery Historian y los experimentos relacionados con consumo de energia
 private fun herramientaBatteryHistorian() = HerramientaDiagnostico(
     id = "battery_historian",
     nombreResId = R.string.diagnostico_herramienta_battery_historian_nombre,
@@ -245,6 +256,7 @@ private fun herramientaBatteryHistorian() = HerramientaDiagnostico(
     )
 )
 
+// Devuelve la lista completa de experimentos de la app relacionados con una herramienta generica
 private fun todosLosExperimentos(): List<RelacionExperimentoDiagnostico> {
     return listOf(
         RelacionExperimentoDiagnostico(

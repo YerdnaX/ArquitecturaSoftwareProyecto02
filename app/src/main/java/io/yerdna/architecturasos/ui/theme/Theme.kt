@@ -33,6 +33,7 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+// Aplica el tema Material de la app, eligiendo esquema de colores dinamico o estatico segun el modo claro/oscuro y la version de Android.
 @Composable
 fun ArchitecturasOSTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

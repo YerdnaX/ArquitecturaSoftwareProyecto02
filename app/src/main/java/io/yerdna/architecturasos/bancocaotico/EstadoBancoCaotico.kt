@@ -24,6 +24,7 @@ data class ConfiguracionBancoCaotico(
     val operacionesPorCajero: Int = 8,
     val montoPorOperacion: Int = 1
 ) {
+    // Ajusta la configuración para que sus valores queden dentro de los rangos permitidos
     fun normalizada(): ConfiguracionBancoCaotico {
         return copy(
             cantidadCajeros = cantidadCajeros.coerceIn(MIN_CAJEROS, MAX_CAJEROS),
@@ -88,6 +89,7 @@ sealed class EventoRegistroBancoCaotico {
     data class ErrorTecnico(val mensaje: String?) : EventoRegistroBancoCaotico()
 }
 
+// Genera la lista inicial de cajeros en estado de espera según la configuración dada
 fun cajerosIniciales(configuracion: ConfiguracionBancoCaotico): List<CajeroBancoCaotico> {
     return (1..configuracion.normalizada().cantidadCajeros).map { id ->
         CajeroBancoCaotico(

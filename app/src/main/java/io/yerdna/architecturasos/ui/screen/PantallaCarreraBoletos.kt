@@ -66,6 +66,7 @@ import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+// Pantalla principal del experimento de carrera de boletos, arma el viewModel, el registro de eventos y el flujo de salida
 @Composable
 fun PantallaCarreraBoletos(
     onVolver: () -> Unit
@@ -90,6 +91,7 @@ fun PantallaCarreraBoletos(
     val modoSinMutex = stringResource(R.string.modo_sin_mutex)
     val modoConMutex = stringResource(R.string.modo_con_mutex)
 
+    // Traduce el modo de ejecucion al texto que se muestra en el log de eventos
     fun textoModoLog(modo: ModoCarreraBoletos): String {
         return when (modo) {
             ModoCarreraBoletos.SinMutex -> modoSinMutex
@@ -97,6 +99,7 @@ fun PantallaCarreraBoletos(
         }
     }
 
+    // Convierte cada evento del experimento en una linea de log con el mensaje correspondiente
     fun registrarEvento(evento: EventoRegistroCarreraBoletos) {
         when (evento) {
             is EventoRegistroCarreraBoletos.ConfiguracionAplicada -> registro.logger.info(
@@ -147,6 +150,7 @@ fun PantallaCarreraBoletos(
         }
     }
 
+    // Decide si hay que pedir confirmacion antes de salir o si se puede volver de inmediato
     fun solicitarSalida() {
         if (viewModel.hayEjecucionActiva()) {
             mostrarConfirmacionSalida = true
@@ -209,6 +213,7 @@ fun PantallaCarreraBoletos(
     )
 }
 
+// Arma el scaffold del experimento y ordena en una lista todas las secciones de la pantalla
 @Composable
 private fun ContenidoCarreraBoletos(
     estado: EstadoCarreraBoletos,
@@ -292,6 +297,7 @@ private fun ContenidoCarreraBoletos(
     }
 }
 
+// Muestra los controles de configuracion (boletos, compradores) y los botones para iniciar, cancelar o reiniciar la carrera
 @Composable
 private fun ControlesCarreraBoletos(
     configuracion: ConfiguracionCarreraBoletos,
@@ -357,6 +363,7 @@ private fun ControlesCarreraBoletos(
     }
 }
 
+// Dibuja una fila con etiqueta y botones de mas/menos para ajustar un valor numerico de configuracion
 @Composable
 private fun ControlNumeroCarreraBoletos(
     etiqueta: String,
@@ -408,6 +415,7 @@ private fun ControlNumeroCarreraBoletos(
     }
 }
 
+// Muestra la tarjeta de la seccion critica con el estado general, el modo y quien tiene el mutex en ese momento
 @Composable
 private fun PanelMutexCarreraBoletos(
     fase: FaseCarreraBoletos,
@@ -445,6 +453,7 @@ private fun PanelMutexCarreraBoletos(
     }
 }
 
+// Recorre la lista de compradores y dibuja una fila de estado por cada uno
 @Composable
 private fun ListaCompradoresCarreraBoletos(
     compradores: List<CompradorBoleto>
@@ -456,6 +465,7 @@ private fun ListaCompradoresCarreraBoletos(
     }
 }
 
+// Dibuja la tarjeta de un comprador individual con su color de estado, nombre y boletos comprados
 @Composable
 private fun FilaCompradorBoleto(
     comprador: CompradorBoleto
@@ -497,6 +507,7 @@ private fun FilaCompradorBoleto(
     }
 }
 
+// Muestra la tarjeta con las metricas de la ejecucion actual y el mensaje de error si algo fallo
 @Composable
 private fun PanelMetricasCarreraBoletos(
     fase: FaseCarreraBoletos,
@@ -538,6 +549,7 @@ private fun PanelMetricasCarreraBoletos(
     }
 }
 
+// Muestra lado a lado los resultados finales de la corrida sin mutex y con mutex para compararlos
 @Composable
 private fun ComparacionResultadosCarreraBoletos(
     resultadoSinMutex: ResultadoCarreraBoletos?,
@@ -555,6 +567,7 @@ private fun ComparacionResultadosCarreraBoletos(
     }
 }
 
+// Dibuja la tarjeta con el resultado de un modo especifico (sin o con mutex), o un mensaje si aun no se ha ejecutado
 @Composable
 private fun ResultadoModoCarreraBoletos(
     titulo: String,
@@ -610,6 +623,7 @@ private fun ResultadoModoCarreraBoletos(
     }
 }
 
+// Muestra los comandos adb sugeridos para verificar el experimento desde la terminal, con boton para copiarlos
 @Composable
 private fun ComoVerificarCarreraBoletos() {
     val clipboard = LocalClipboard.current
@@ -666,6 +680,7 @@ private data class ComandoVerificacionCarreraBoletos(
     val descripcionResId: Int
 )
 
+// Muestra el dialogo de confirmacion para salir de la pantalla cancelando la ejecucion en curso
 @Composable
 private fun DialogoSalidaCarreraBoletos(
     onConfirmar: () -> Unit,
@@ -688,6 +703,7 @@ private fun DialogoSalidaCarreraBoletos(
     )
 }
 
+// Traduce la fase actual de la carrera al texto que se muestra en pantalla
 @Composable
 private fun textoFaseCarreraBoletos(fase: FaseCarreraBoletos): String {
     return when (fase) {
@@ -701,6 +717,7 @@ private fun textoFaseCarreraBoletos(fase: FaseCarreraBoletos): String {
     }
 }
 
+// Traduce el estado de un comprador al texto que se muestra en su fila
 @Composable
 private fun textoEstadoComprador(estado: EstadoCompradorBoleto): String {
     return when (estado) {
@@ -716,6 +733,7 @@ private fun textoEstadoComprador(estado: EstadoCompradorBoleto): String {
     }
 }
 
+// Convierte el id del comprador que esta en la seccion critica en el texto a mostrar, o "no disponible" si no hay ninguno
 @Composable
 private fun textoCompradorEnSeccion(valor: String?): String {
     val idComprador = valor?.toIntOrNull()
@@ -726,6 +744,7 @@ private fun textoCompradorEnSeccion(valor: String?): String {
     }
 }
 
+// Traduce el modo de ejecucion (sin o con mutex) al texto que se muestra en pantalla
 @Composable
 private fun textoModoCarreraBoletos(modo: ModoCarreraBoletos): String {
     return when (modo) {
@@ -734,6 +753,7 @@ private fun textoModoCarreraBoletos(modo: ModoCarreraBoletos): String {
     }
 }
 
+// Elige el color asociado al estado de un comprador para pintar su indicador visual
 @Composable
 private fun colorEstadoComprador(estado: EstadoCompradorBoleto): Color {
     return when (estado) {
@@ -751,10 +771,12 @@ private fun colorEstadoComprador(estado: EstadoCompradorBoleto): Color {
     }
 }
 
+// Formatea un string de recurso con los argumentos dados usando el locale por defecto
 private fun String.formatear(vararg argumentos: Any): String {
     return String.format(Locale.getDefault(), this, *argumentos)
 }
 
+// Preview de la pantalla en su estado inicial, antes de iniciar cualquier ejecucion
 @Preview(showBackground = true)
 @Composable
 private fun PantallaCarreraBoletosInicialPreview() {
@@ -775,6 +797,7 @@ private fun PantallaCarreraBoletosInicialPreview() {
     }
 }
 
+// Preview de la pantalla mientras hay una ejecucion con mutex en curso y compradores esperando
 @Preview(showBackground = true)
 @Composable
 private fun PantallaCarreraBoletosEjecutandoPreview() {
