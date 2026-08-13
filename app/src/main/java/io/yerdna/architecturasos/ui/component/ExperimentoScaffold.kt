@@ -1,6 +1,7 @@
 package io.yerdna.architecturasos.ui.component
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,6 +22,7 @@ import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
 fun ExperimentoScaffold(
     titulo: String,
     onVolver: (() -> Unit)? = null,
+    acciones: @Composable RowScope.() -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -41,7 +43,8 @@ fun ExperimentoScaffold(
                             )
                         }
                     }
-                }
+                },
+                actions = acciones
             )
         },
         content = content

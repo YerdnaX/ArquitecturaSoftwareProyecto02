@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -50,8 +51,12 @@ import io.yerdna.architecturasos.procesos.EstadoFabricaRobots
 import io.yerdna.architecturasos.procesos.FabricaRobotsViewModel
 import io.yerdna.architecturasos.procesos.ResultadoUltimaEjecucion
 import io.yerdna.architecturasos.procesos.UMBRAL_ADVERTENCIA_ROBOTS
+import io.yerdna.architecturasos.ui.component.BotonRegistroEventos
 import io.yerdna.architecturasos.ui.component.ExperimentoScaffold
+import io.yerdna.architecturasos.ui.component.HojaRegistroEventos
+import io.yerdna.architecturasos.ui.component.rememberRegistroExperimento
 import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
+import io.yerdna.architecturasos.util.EventoExperimento
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,6 +68,7 @@ fun PantallaFabricaRobots(
 ) {
     val context = LocalContext.current.applicationContext
     val viewModel = remember { FabricaRobotsViewModel() }
+    val registro = rememberRegistroExperimento("OSPlayground/FabricaRobots")
     val controlador = remember {
         ControladorFabricaRobots(
             applicationContext = context,
@@ -77,6 +83,7 @@ fun PantallaFabricaRobots(
                         viewModel.estado.robotsEnsamblados > 0
                     ) {
                         viewModel.marcarCompletado(mensajes)
+                        registro.logger.info("Experimento completado")
                     } else {
                         viewModel.actualizarEstadoFabrica(estado, mensajes)
                     }
@@ -87,7 +94,13 @@ fun PantallaFabricaRobots(
                 }
 
                 override fun onError(mensaje: String, mensajes: Int) {
-                    viewModel.marcarError(mensaje.ifBlank { "Error en la fabrica secundaria" }, mensajes)
+                    val texto = mensaje.ifBlank { "Error en la fabrica secundaria" }
+                    registro.logger.error(texto)
+                    viewModel.marcarError(texto, mensajes)
+                }
+
+                override fun onEventoRegistro(evento: EventoExperimento) {
+                    registro.logger.registrar(evento)
                 }
             }
         )
@@ -95,10 +108,12 @@ fun PantallaFabricaRobots(
 
     var mostrarConfirmacion by remember { mutableStateOf(false) }
     fun detener(cancelado: Boolean) {
+        registro.logger.info("Detencion solicitada por el usuario")
         viewModel.iniciarDetencion()
         controlador.detener()
         if (cancelado) {
             viewModel.marcarCancelado()
+            registro.logger.advertencia("Experimento cancelado")
         }
     }
 
@@ -126,6 +141,7 @@ fun PantallaFabricaRobots(
         DialogoCancelarExperimento(
             onConfirmar = {
                 mostrarConfirmacion = false
+                registro.logger.advertencia("Salida confirmada: se detendra la fabrica")
                 detener(cancelado = true)
                 onVolver()
             },
@@ -140,11 +156,22 @@ fun PantallaFabricaRobots(
         onCantidadChange = viewModel::actualizarCantidad,
         onIniciar = {
             val cantidad = viewModel.cantidadRobotsValida ?: return@ContenidoFabricaRobots
+            registro.limpiar()
+            registro.logger.info("Inicio solicitado para $cantidad robots")
             viewModel.prepararInicio(cantidad)
             controlador.iniciar(cantidad)
         },
         onDetener = { detener(cancelado = true) },
-        onVolver = ::solicitarSalida
+        onVolver = ::solicitarSalida,
+        acciones = {
+            BotonRegistroEventos(onClick = registro::abrir)
+        }
+    )
+
+    HojaRegistroEventos(
+        visible = registro.visible,
+        eventos = registro.eventos,
+        onCerrar = registro::cerrar
     )
 }
 
@@ -156,11 +183,13 @@ private fun ContenidoFabricaRobots(
     onCantidadChange: (String) -> Unit,
     onIniciar: () -> Unit,
     onDetener: () -> Unit,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    acciones: @Composable RowScope.() -> Unit = {}
 ) {
     ExperimentoScaffold(
         titulo = stringResource(R.string.experimento_fabrica_robots_nombre),
-        onVolver = onVolver
+        onVolver = onVolver,
+        acciones = acciones
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.padding(innerPadding),

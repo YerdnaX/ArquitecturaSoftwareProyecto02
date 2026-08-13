@@ -4,6 +4,14 @@
     <string name="subtitulo_panel_experimentos">Experimentos interactivos de Sistemas Operativos en Android</string>
     <string name="accion_abrir">Abrir</string>
     <string name="accion_volver">Volver</string>
+    <string name="registro_eventos_titulo">Registro de eventos</string>
+    <string name="registro_eventos_vacio">Sin eventos todavía</string>
+    <string name="registro_eventos_accion_monitoreo">Abrir registro de eventos</string>
+    <string name="tipo_evento_informacion">I</string>
+    <string name="tipo_evento_advertencia">A</string>
+    <string name="tipo_evento_error">E</string>
+    <string name="origen_evento_proceso_principal">Proceso principal</string>
+    <string name="origen_evento_servicio">Servicio</string>
     <string name="mensaje_modulo_construccion">Módulo en construcción</string>
     <string name="experimento_fabrica_robots_nombre">Fábrica de Robots</string>
     <string name="experimento_fabrica_robots_concepto">Procesos</string>

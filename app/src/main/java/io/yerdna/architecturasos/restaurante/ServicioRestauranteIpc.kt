@@ -12,6 +12,10 @@ import android.os.Process
 import android.os.RemoteException
 import android.util.Log
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.DEMORA_PREPARACION_MS
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_EVENTO_MENSAJE
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_EVENTO_ORIGEN
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_EVENTO_TIMESTAMP
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_EVENTO_TIPO
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_ID_ORDEN
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_MENSAJES_INTERCAMBIADOS
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_MENSAJE_ERROR
@@ -26,12 +30,16 @@ import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_COCINA_C
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_DESCONECTAR_CLIENTE
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ENVIAR_ORDEN
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ERROR_IPC
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_EVENTO_REGISTRO
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ORDEN_EN_COLA
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ORDEN_PROCESANDO
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ORDEN_RECIBIDA
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_REGISTRAR_CLIENTE
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_RESPUESTA_ENVIADA
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.TAG_LOGCAT
+import io.yerdna.architecturasos.util.EventoExperimento
+import io.yerdna.architecturasos.util.OrigenEvento
+import io.yerdna.architecturasos.util.TipoEvento
 import java.lang.ref.WeakReference
 import java.util.ArrayDeque
 
@@ -43,12 +51,13 @@ class ServicioRestauranteIpc : Service() {
     private var ordenActual: OrdenRestaurante? = null
     private var totalProcesadas = 0
     private var mensajesIntercambiados = 0
+    private val eventosServicio = mutableListOf<EventoExperimento>()
 
     private val tareaPreparacion = Runnable {
         val orden = ordenActual ?: return@Runnable
         val respuesta = "Orden lista: ${orden.texto}"
         totalProcesadas += 1
-        Log.i(TAG_LOGCAT, "Respuesta enviada para orden ${orden.id}: $respuesta")
+        publicarEventoRegistro(TipoEvento.Informacion, "Respuesta enviada para orden ${orden.id}: $respuesta")
         enviarMensaje(
             tipo = MSG_RESPUESTA_ENVIADA,
             orden = orden,
@@ -89,7 +98,7 @@ class ServicioRestauranteIpc : Service() {
         cliente = messengerCliente
         mensajesIntercambiados += 1
         val pidCocina = Process.myPid()
-        Log.i(TAG_LOGCAT, "Cocina conectada con PID $pidCocina")
+        publicarEventoRegistro(TipoEvento.Informacion, "Cocina conectada con PID $pidCocina")
         enviarMensaje(
             tipo = MSG_COCINA_CONECTADA,
             datosExtra = Bundle().apply {
@@ -113,21 +122,24 @@ class ServicioRestauranteIpc : Service() {
             timestamp = msg.data.getLong(KEY_TIMESTAMP, System.currentTimeMillis())
         )
 
-        Log.i(TAG_LOGCAT, "Orden recibida ${orden.id}: ${orden.texto}")
+        publicarEventoRegistro(TipoEvento.Informacion, "Orden recibida ${orden.id}: ${orden.texto}")
         if (ordenActual == null) {
             ordenActual = orden
             enviarMensaje(MSG_ORDEN_RECIBIDA, orden)
             procesarOrdenActual()
         } else {
             colaOrdenes.addLast(orden)
-            Log.i(TAG_LOGCAT, "Orden en cola ${orden.id}. Pendientes: ${colaOrdenes.size}")
+            publicarEventoRegistro(
+                TipoEvento.Informacion,
+                "Orden en cola ${orden.id}. Pendientes: ${colaOrdenes.size}"
+            )
             enviarMensaje(MSG_ORDEN_EN_COLA, orden)
         }
     }
 
     private fun procesarOrdenActual() {
         val orden = ordenActual ?: return
-        Log.i(TAG_LOGCAT, "Orden procesando ${orden.id}")
+        publicarEventoRegistro(TipoEvento.Informacion, "Orden procesando ${orden.id}")
         enviarMensaje(MSG_ORDEN_PROCESANDO, orden)
         handler.removeCallbacks(tareaPreparacion)
         handler.postDelayed(tareaPreparacion, DEMORA_PREPARACION_MS)
@@ -150,7 +162,7 @@ class ServicioRestauranteIpc : Service() {
     }
 
     private fun desconectarCliente() {
-        Log.i(TAG_LOGCAT, "Desconexion solicitada por el mesero")
+        publicarEventoRegistro(TipoEvento.Advertencia, "Desconexion solicitada por el mesero")
         limpiarTrabajo("Desconexion: orden actual cancelada y cola vaciada")
         stopSelf()
     }
@@ -158,19 +170,23 @@ class ServicioRestauranteIpc : Service() {
     private fun limpiarTrabajo(motivo: String) {
         handler.removeCallbacks(tareaPreparacion)
         if (ordenActual != null) {
-            Log.i(TAG_LOGCAT, "Orden actual cancelada")
+            publicarEventoRegistro(TipoEvento.Advertencia, "Orden actual cancelada")
         }
         if (colaOrdenes.isNotEmpty()) {
-            Log.i(TAG_LOGCAT, "Cola vaciada: ${colaOrdenes.size} ordenes pendientes")
+            publicarEventoRegistro(
+                TipoEvento.Advertencia,
+                "Cola vaciada: ${colaOrdenes.size} ordenes pendientes"
+            )
         }
         ordenActual = null
         colaOrdenes.clear()
+        publicarEventoRegistro(TipoEvento.Informacion, motivo)
         cliente = null
-        Log.i(TAG_LOGCAT, motivo)
+        eventosServicio.clear()
     }
 
     private fun enviarError(mensaje: String) {
-        Log.e(TAG_LOGCAT, mensaje)
+        publicarEventoRegistro(TipoEvento.Error, mensaje)
         enviarMensaje(
             tipo = MSG_ERROR_IPC,
             datosExtra = Bundle().apply {
@@ -204,8 +220,29 @@ class ServicioRestauranteIpc : Service() {
             destino.send(Message.obtain(null, tipo).apply { data = datos })
         } catch (exception: RemoteException) {
             Log.e(TAG_LOGCAT, "No se pudo enviar mensaje al mesero", exception)
-            limpiarTrabajo("Error enviando respuesta al mesero")
+            handler.removeCallbacks(tareaPreparacion)
+            ordenActual = null
+            colaOrdenes.clear()
+            cliente = null
+            eventosServicio.clear()
             stopSelf()
         }
+    }
+
+    private fun publicarEventoRegistro(
+        tipo: TipoEvento,
+        mensaje: String,
+        timestamp: Long = System.currentTimeMillis()
+    ) {
+        eventosServicio.add(EventoExperimento(timestamp, tipo, mensaje, OrigenEvento.Servicio))
+        enviarMensaje(
+            tipo = MSG_EVENTO_REGISTRO,
+            datosExtra = Bundle().apply {
+                putString(KEY_EVENTO_TIPO, tipo.name)
+                putString(KEY_EVENTO_MENSAJE, mensaje)
+                putLong(KEY_EVENTO_TIMESTAMP, timestamp)
+                putString(KEY_EVENTO_ORIGEN, OrigenEvento.Servicio.name)
+            }
+        )
     }
 }

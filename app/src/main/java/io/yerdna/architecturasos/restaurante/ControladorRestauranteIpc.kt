@@ -11,7 +11,10 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
-import android.util.Log
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_EVENTO_MENSAJE
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_EVENTO_ORIGEN
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_EVENTO_TIMESTAMP
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_EVENTO_TIPO
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_ID_ORDEN
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_MENSAJES_INTERCAMBIADOS
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.KEY_MENSAJE_ERROR
@@ -26,12 +29,15 @@ import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_COCINA_C
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_DESCONECTAR_CLIENTE
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ENVIAR_ORDEN
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ERROR_IPC
+import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_EVENTO_REGISTRO
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ORDEN_EN_COLA
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ORDEN_PROCESANDO
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_ORDEN_RECIBIDA
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_REGISTRAR_CLIENTE
 import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.MSG_RESPUESTA_ENVIADA
-import io.yerdna.architecturasos.restaurante.ContratoRestauranteIpc.TAG_LOGCAT
+import io.yerdna.architecturasos.util.EventoExperimento
+import io.yerdna.architecturasos.util.OrigenEvento
+import io.yerdna.architecturasos.util.TipoEvento
 import java.lang.ref.WeakReference
 
 class ControladorRestauranteIpc(
@@ -46,6 +52,7 @@ class ControladorRestauranteIpc(
         fun onRespuestaEnviada(evento: EventoOrdenRestaurante)
         fun onServicioDesconectado()
         fun onError(mensaje: String, rompeConexion: Boolean, mensajes: Int)
+        fun onEventoRegistro(evento: EventoExperimento)
     }
 
     private val intentServicio = Intent(applicationContext, ServicioRestauranteIpc::class.java)
@@ -60,7 +67,7 @@ class ControladorRestauranteIpc(
             enlazado = true
             liberado = false
             messengerServicio = Messenger(service)
-            Log.i(TAG_LOGCAT, "Servicio Restaurante IPC enlazado")
+            registrarEvento(TipoEvento.Informacion, "Servicio Restaurante IPC enlazado")
             enviarRegistroCliente()
         }
 
@@ -75,11 +82,10 @@ class ControladorRestauranteIpc(
         if (enlazado || messengerServicio != null) return
         liberado = false
         try {
-            Log.i(TAG_LOGCAT, "Conexion solicitada")
             applicationContext.startService(intentServicio)
             applicationContext.bindService(intentServicio, conexion, Context.BIND_AUTO_CREATE)
         } catch (exception: RuntimeException) {
-            Log.e(TAG_LOGCAT, "No se pudo conectar con la cocina", exception)
+            registrarEvento(TipoEvento.Error, "No se pudo conectar con la cocina")
             liberar(detenerServicio = true)
             callbacks.onError("No se pudo conectar con la cocina", true, 0)
         }
@@ -105,22 +111,19 @@ class ControladorRestauranteIpc(
                     replyTo = messengerCliente
                 }
             )
-            Log.i(TAG_LOGCAT, "Orden enviada $idOrden: $orden")
         } catch (exception: RemoteException) {
-            Log.e(TAG_LOGCAT, "No se pudo enviar orden a la cocina", exception)
+            registrarEvento(TipoEvento.Error, "No se pudo enviar orden a la cocina")
             liberar(detenerServicio = true)
             callbacks.onError("No se pudo enviar la orden a la cocina", true, 0)
         }
     }
 
     fun desconectar() {
-        Log.i(TAG_LOGCAT, "Desconexion solicitada")
         enviarDesconexionSiDisponible()
         liberar(detenerServicio = true)
     }
 
     fun reiniciar(onReconectar: () -> Unit) {
-        Log.i(TAG_LOGCAT, "Reinicio solicitado")
         desconectar()
         onReconectar()
     }
@@ -143,7 +146,7 @@ class ControladorRestauranteIpc(
         try {
             destino.send(Message.obtain(null, tipo).apply(configurar))
         } catch (exception: RemoteException) {
-            Log.e(TAG_LOGCAT, "No se pudo enviar mensaje al servicio", exception)
+            registrarEvento(TipoEvento.Error, "No se pudo enviar mensaje al servicio")
             callbacks.onError("No se pudo comunicar con la cocina", true, 0)
         }
     }
@@ -169,6 +172,17 @@ class ControladorRestauranteIpc(
         }
     }
 
+    private fun registrarEvento(tipo: TipoEvento, mensaje: String) {
+        callbacks.onEventoRegistro(
+            EventoExperimento(
+                timestamp = System.currentTimeMillis(),
+                tipo = tipo,
+                mensaje = mensaje,
+                origen = OrigenEvento.ProcesoPrincipal
+            )
+        )
+    }
+
     private class ManejadorRespuesta(
         controlador: ControladorRestauranteIpc
     ) : Handler(Looper.getMainLooper()) {
@@ -192,6 +206,7 @@ class ControladorRestauranteIpc(
                     false,
                     mensajes
                 )
+                MSG_EVENTO_REGISTRO -> controlador.callbacks.onEventoRegistro(msg.aEventoRegistro())
                 else -> super.handleMessage(msg)
             }
         }
@@ -208,6 +223,25 @@ class ControladorRestauranteIpc(
                 totalProcesadas = data.getInt(KEY_TOTAL_PROCESADAS),
                 mensajesIntercambiados = data.getInt(KEY_MENSAJES_INTERCAMBIADOS)
             )
+        }
+
+        private fun Message.aEventoRegistro(): EventoExperimento {
+            val tipo = runCatching {
+                TipoEvento.valueOf(data.getString(KEY_EVENTO_TIPO).orEmpty())
+            }.getOrDefault(TipoEvento.Informacion)
+
+            return EventoExperimento(
+                timestamp = data.getLong(KEY_EVENTO_TIMESTAMP, System.currentTimeMillis()),
+                tipo = tipo,
+                mensaje = data.getString(KEY_EVENTO_MENSAJE).orEmpty(),
+                origen = obtenerOrigen(data.getString(KEY_EVENTO_ORIGEN))
+            )
+        }
+
+        private fun obtenerOrigen(valor: String?): OrigenEvento {
+            return runCatching {
+                OrigenEvento.valueOf(valor.orEmpty())
+            }.getOrDefault(OrigenEvento.Servicio)
         }
     }
 }

@@ -11,6 +11,10 @@ import android.os.Messenger
 import android.os.Process
 import android.os.RemoteException
 import android.util.Log
+import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.KEY_EVENTO_MENSAJE
+import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.KEY_EVENTO_ORIGEN
+import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.KEY_EVENTO_TIMESTAMP
+import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.KEY_EVENTO_TIPO
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.KEY_ESTADO
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.KEY_MENSAJES_INTERCAMBIADOS
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.KEY_MENSAJE_ERROR
@@ -20,10 +24,14 @@ import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.KEY_ROBOTS_ENSAM
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.MSG_DETENER_FABRICA
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.MSG_ERROR_FABRICA
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.MSG_ESTADO_FABRICA
+import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.MSG_EVENTO_REGISTRO
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.MSG_INICIAR_FABRICA
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.MSG_PID_FABRICA
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.MSG_REGISTRAR_CLIENTE
 import io.yerdna.architecturasos.procesos.ContratoFabricaRobots.MSG_ROBOT_ENSAMBLADO
+import io.yerdna.architecturasos.util.EventoExperimento
+import io.yerdna.architecturasos.util.OrigenEvento
+import io.yerdna.architecturasos.util.TipoEvento
 import java.lang.ref.WeakReference
 
 class ServicioFabricaRobots : Service() {
@@ -33,6 +41,7 @@ class ServicioFabricaRobots : Service() {
     private var robotsConfigurados = ROBOTS_POR_DEFECTO
     private var robotsEnsamblados = 0
     private var mensajesIntercambiados = 0
+    private val eventosServicio = mutableListOf<EventoExperimento>()
 
     private val tareaEnsamblado = object : Runnable {
         override fun run() {
@@ -42,7 +51,7 @@ class ServicioFabricaRobots : Service() {
             }
 
             robotsEnsamblados += 1
-            Log.i(TAG, "Robot ensamblado #$robotsEnsamblados")
+            publicarEventoRegistro(TipoEvento.Informacion, "Robot ensamblado #$robotsEnsamblados")
             enviarMensaje(
                 tipo = MSG_ROBOT_ENSAMBLADO,
                 datos = Bundle().apply {
@@ -65,7 +74,8 @@ class ServicioFabricaRobots : Service() {
 
     override fun onDestroy() {
         detenerTarea()
-        Log.i(TAG, "Servicio destruido, recursos liberados")
+        publicarEventoRegistro(TipoEvento.Informacion, "Servicio destruido, recursos liberados")
+        eventosServicio.clear()
         super.onDestroy()
     }
 
@@ -91,7 +101,7 @@ class ServicioFabricaRobots : Service() {
         cliente = messengerCliente
         mensajesIntercambiados += 1
         val pid = Process.myPid()
-        Log.i(TAG, "PID secundario detectado: $pid")
+        publicarEventoRegistro(TipoEvento.Informacion, "PID secundario detectado: $pid")
         enviarMensaje(
             tipo = MSG_PID_FABRICA,
             datos = Bundle().apply {
@@ -101,11 +111,15 @@ class ServicioFabricaRobots : Service() {
     }
 
     private fun iniciarFabrica(cantidadRobots: Int) {
+        eventosServicio.clear()
         robotsConfigurados = cantidadRobots.coerceAtLeast(ROBOTS_MINIMOS)
         robotsEnsamblados = 0
         mensajesIntercambiados = 1
 
-        Log.i(TAG, "Proceso ejecutandose con objetivo de $robotsConfigurados robots")
+        publicarEventoRegistro(
+            TipoEvento.Informacion,
+            "Proceso ejecutandose con objetivo de $robotsConfigurados robots"
+        )
         enviarEstado(EstadoEjecucionFabrica.Ejecucion)
         handler.removeCallbacks(tareaEnsamblado)
         handler.postDelayed(tareaEnsamblado, INTERVALO_ROBOT_MS)
@@ -113,14 +127,17 @@ class ServicioFabricaRobots : Service() {
 
     private fun detenerPorUsuario() {
         mensajesIntercambiados += 1
-        Log.i(TAG, "Detencion solicitada")
+        publicarEventoRegistro(TipoEvento.Advertencia, "Detencion solicitada")
         detenerTarea()
         enviarEstado(EstadoEjecucionFabrica.Inactivo)
         stopSelf()
     }
 
     private fun finalizarCompletado() {
-        Log.i(TAG, "Finalizacion: $robotsEnsamblados robots ensamblados")
+        publicarEventoRegistro(
+            TipoEvento.Informacion,
+            "Finalizacion: $robotsEnsamblados robots ensamblados"
+        )
         detenerTarea()
         enviarEstado(EstadoEjecucionFabrica.Inactivo)
         stopSelf()
@@ -142,7 +159,7 @@ class ServicioFabricaRobots : Service() {
     }
 
     private fun enviarError(mensaje: String) {
-        Log.e(TAG, mensaje)
+        publicarEventoRegistro(TipoEvento.Error, mensaje)
         enviarMensaje(
             tipo = MSG_ERROR_FABRICA,
             datos = Bundle().apply {
@@ -163,6 +180,23 @@ class ServicioFabricaRobots : Service() {
             detenerTarea()
             stopSelf()
         }
+    }
+
+    private fun publicarEventoRegistro(
+        tipo: TipoEvento,
+        mensaje: String,
+        timestamp: Long = System.currentTimeMillis()
+    ) {
+        eventosServicio.add(EventoExperimento(timestamp, tipo, mensaje, OrigenEvento.Servicio))
+        enviarMensaje(
+            tipo = MSG_EVENTO_REGISTRO,
+            datos = Bundle().apply {
+                putString(KEY_EVENTO_TIPO, tipo.name)
+                putString(KEY_EVENTO_MENSAJE, mensaje)
+                putLong(KEY_EVENTO_TIMESTAMP, timestamp)
+                putString(KEY_EVENTO_ORIGEN, OrigenEvento.Servicio.name)
+            }
+        )
     }
 
     private companion object {

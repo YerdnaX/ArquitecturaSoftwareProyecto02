@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -50,8 +51,12 @@ import io.yerdna.architecturasos.restaurante.EstadoRestauranteIpc
 import io.yerdna.architecturasos.restaurante.EventoOrdenRestaurante
 import io.yerdna.architecturasos.restaurante.RestauranteIpcViewModel
 import io.yerdna.architecturasos.restaurante.ResultadoRestauranteIpc
+import io.yerdna.architecturasos.ui.component.BotonRegistroEventos
 import io.yerdna.architecturasos.ui.component.ExperimentoScaffold
+import io.yerdna.architecturasos.ui.component.HojaRegistroEventos
+import io.yerdna.architecturasos.ui.component.rememberRegistroExperimento
 import io.yerdna.architecturasos.ui.theme.ArchitecturasOSTheme
+import io.yerdna.architecturasos.util.EventoExperimento
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,6 +68,7 @@ fun PantallaRestauranteIpc(
 ) {
     val context = LocalContext.current.applicationContext
     val viewModel = remember { RestauranteIpcViewModel() }
+    val registro = rememberRegistroExperimento("OSPlayground/BinderIPC")
     val controlador = remember {
         ControladorRestauranteIpc(
             applicationContext = context,
@@ -88,11 +94,17 @@ fun PantallaRestauranteIpc(
                 }
 
                 override fun onServicioDesconectado() {
+                    registro.logger.advertencia("Servicio Restaurante IPC desconectado")
                     viewModel.marcarDesconectado()
                 }
 
                 override fun onError(mensaje: String, rompeConexion: Boolean, mensajes: Int) {
+                    registro.logger.error(mensaje.ifBlank { "Error de comunicacion con la cocina" })
                     viewModel.marcarError(mensaje, rompeConexion, mensajes)
+                }
+
+                override fun onEventoRegistro(evento: EventoExperimento) {
+                    registro.logger.registrar(evento)
                 }
             }
         )
@@ -102,6 +114,7 @@ fun PantallaRestauranteIpc(
     var mostrarConfirmacionReinicio by remember { mutableStateOf(false) }
 
     fun desconectar(cancelado: Boolean) {
+        registro.logger.info("Desconexion solicitada por el usuario")
         controlador.desconectar()
         viewModel.marcarDesconectado(cancelado = cancelado)
     }
@@ -136,6 +149,7 @@ fun PantallaRestauranteIpc(
         DialogoSalidaRestaurante(
             onConfirmar = {
                 mostrarConfirmacionSalida = false
+                registro.logger.advertencia("Salida confirmada: se desconectara la cocina")
                 desconectar(cancelado = true)
                 onVolver()
             },
@@ -147,6 +161,8 @@ fun PantallaRestauranteIpc(
         DialogoReinicioRestaurante(
             onConfirmar = {
                 mostrarConfirmacionReinicio = false
+                registro.limpiar()
+                registro.logger.advertencia("Reinicio confirmado")
                 controlador.reiniciar {
                     viewModel.limpiarDatos()
                     viewModel.prepararConexion()
@@ -165,17 +181,29 @@ fun PantallaRestauranteIpc(
         onOrdenChange = viewModel::actualizarOrden,
         onOrdenRapida = viewModel::cargarOrdenRapida,
         onConectar = {
+            registro.limpiar()
+            registro.logger.info("Conexion solicitada")
             viewModel.prepararConexion()
             controlador.conectar()
         },
         onDesconectar = { desconectar(cancelado = viewModel.hayTrabajoPendiente()) },
         onEnviarOrden = {
             val orden = viewModel.prepararEnvioOrden() ?: return@ContenidoRestauranteIpc
+            registro.logger.info("Orden enviada ${orden.id}: ${orden.texto}")
             controlador.enviarOrden(orden.texto, orden.id, orden.pidOrigen)
             viewModel.marcarOrdenEnviada()
         },
         onReiniciar = ::solicitarReinicio,
-        onVolver = ::solicitarSalida
+        onVolver = ::solicitarSalida,
+        acciones = {
+            BotonRegistroEventos(onClick = registro::abrir)
+        }
+    )
+
+    HojaRegistroEventos(
+        visible = registro.visible,
+        eventos = registro.eventos,
+        onCerrar = registro::cerrar
     )
 }
 
@@ -191,11 +219,13 @@ private fun ContenidoRestauranteIpc(
     onDesconectar: () -> Unit,
     onEnviarOrden: () -> Unit,
     onReiniciar: () -> Unit,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    acciones: @Composable RowScope.() -> Unit = {}
 ) {
     ExperimentoScaffold(
         titulo = stringResource(R.string.experimento_restaurante_ipc_nombre),
-        onVolver = onVolver
+        onVolver = onVolver,
+        acciones = acciones
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.padding(innerPadding),
