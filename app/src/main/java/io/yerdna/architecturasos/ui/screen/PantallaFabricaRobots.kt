@@ -408,10 +408,6 @@ private fun ComoVerificar() {
             descripcionResId = R.string.verificacion_dumpsys_fabrica
         ),
         ComandoVerificacion(
-            comando = "adb shell top",
-            descripcionResId = R.string.verificacion_top_fabrica
-        ),
-        ComandoVerificacion(
             comando = "adb logcat -d -s OSPlayground/FabricaRobots",
             descripcionResId = R.string.verificacion_logcat_fabrica
         )

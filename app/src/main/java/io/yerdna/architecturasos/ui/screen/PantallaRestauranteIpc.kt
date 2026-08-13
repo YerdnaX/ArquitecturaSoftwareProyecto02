@@ -493,10 +493,6 @@ private fun ComoVerificarRestaurante() {
         ComandoVerificacionRestaurante(
             comando = "adb logcat -d -s OSPlayground/BinderIPC",
             descripcionResId = R.string.verificacion_logcat_restaurante
-        ),
-        ComandoVerificacionRestaurante(
-            comando = "adb shell top",
-            descripcionResId = R.string.verificacion_top_restaurante
         )
     )
 

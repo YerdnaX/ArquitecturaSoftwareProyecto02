@@ -70,7 +70,6 @@
     <string name="advertencia_duracion_larga">Esta ejecución durará aproximadamente %1$d segundos.</string>
     <string name="verificacion_ps_fabrica">Valida desde Windows que Android creó el proceso principal y el proceso :fabrica_robots. Después de detener, este proceso puede quedar cacheado aunque el servicio ya no esté activo.</string>
     <string name="verificacion_dumpsys_fabrica">Valida si el servicio de la fábrica sigue registrado como servicio activo. Después de detener o finalizar, no debería aparecer como ejecución activa.</string>
-    <string name="verificacion_top_fabrica">Permite observar actividad del proceso durante el ensamblado de robots.</string>
     <string name="verificacion_logcat_fabrica">Muestra el buffer actual de eventos registrados por la fábrica: inicio, PID, robots ensamblados, detención y limpieza.</string>
     <string name="restaurante_ipc_descripcion_corta">El mesero envia ordenes a una cocina en otro proceso usando Binder IPC mediante Messenger.</string>
     <string name="accion_conectar">Conectar</string>
@@ -112,5 +111,4 @@
     <string name="verificacion_ps_restaurante">Valida desde Windows que Android creo el proceso principal y el proceso :cocina_restaurante. Despues de desconectar, este proceso puede quedar cacheado aunque el servicio ya no este activo.</string>
     <string name="verificacion_dumpsys_restaurante">Valida si el servicio de Restaurante IPC sigue registrado como servicio activo. Despues de desconectar o salir, no deberia aparecer como activo.</string>
     <string name="verificacion_logcat_restaurante">Muestra eventos de conexion, envio de orden, cola, procesamiento, respuesta, desconexion, reinicio, limpieza y errores.</string>
-    <string name="verificacion_top_restaurante">Permite observar actividad general de procesos durante la demostracion.</string>
 </resources>
