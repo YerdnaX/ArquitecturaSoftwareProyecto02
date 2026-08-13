@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.yerdna.architecturasos.ui.screen.PantallaBancoCaotico
+import io.yerdna.architecturasos.ui.screen.PantallaCarreraBoletos
 import io.yerdna.architecturasos.ui.screen.PantallaCarreraHilos
 import io.yerdna.architecturasos.ui.screen.PantallaExperimentoTemporal
 import io.yerdna.architecturasos.ui.screen.PantallaFabricaRobots
@@ -55,8 +56,7 @@ fun AplicacionOSPlayground() {
             )
         }
         composable(Navegacion.Ruta.CarreraBoletos) {
-            PantallaExperimentoTemporal(
-                experimento = obtenerExperimentoPorRuta(Navegacion.Ruta.CarreraBoletos),
+            PantallaCarreraBoletos(
                 onVolver = { navController.popBackStack() }
             )
         }
