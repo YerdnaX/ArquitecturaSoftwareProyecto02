@@ -11,5 +11,6 @@ object Navegacion {
         const val CarreraBoletos = "carreraBoletos"
         const val ParqueoInteligente = "parqueoInteligente"
         const val MonstruoMemoria = "monstruoMemoria"
+        const val Diagnosticos = "diagnosticos"
     }
 }

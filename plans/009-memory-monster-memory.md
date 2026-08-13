@@ -6,14 +6,29 @@ Demostrar cambios reales, visibles y controlados en el consumo de memoria de la 
 
 El modulo debe servir para exposicion academica de memoria en Android: la UI explica el concepto, pero las metricas y el crecimiento visual deben salir de memoria realmente reservada por el proceso de la app. No debe provocar `OutOfMemoryError`, ANR ni consumo ilimitado.
 
+## Estructura real del proyecto (corregida)
+
+La raiz real del modulo Android **no** tiene un prefijo `android/`. El proyecto Gradle vive directamente en la raiz del repositorio:
+
+```txt
+app/src/main/java/io/yerdna/architecturasos/
+app/src/main/res/values/strings.xml
+gradlew.bat   (en la raiz del repositorio, sin carpeta android/)
+```
+
+Cualquier referencia previa a `android/app/...` o `cd android` es incorrecta para este proyecto y no debe usarse. Todas las rutas de este plan usan la raiz real.
+
 ## Depende de
 
 - `001-foundation-dashboard-common.md`
+- `011-panel-registro-eventos.md` (ya implementado): logger comun (`ExperimentoLogger`, `EventoExperimento`, `TipoEvento`, `OrigenEvento`) y componentes `rememberRegistroExperimento`, `BotonRegistroEventos`, `HojaRegistroEventos`, `PanelRegistroEventos`. Se usan directamente, sin condicion "si existe".
 - Componentes comunes ya existentes:
-  - `android/app/src/main/java/io/yerdna/architecturasos/ui/component/ExperimentoScaffold.kt`
-  - `android/app/src/main/java/io/yerdna/architecturasos/ui/component/PanelRegistroEventos.kt`
-  - `android/app/src/main/java/io/yerdna/architecturasos/util/ExperimentoLogger.kt`
-  - `android/app/src/main/java/io/yerdna/architecturasos/util/EventoExperimento.kt`
+  - `app/src/main/java/io/yerdna/architecturasos/ui/component/ExperimentoScaffold.kt`
+  - `app/src/main/java/io/yerdna/architecturasos/ui/component/PanelRegistroEventos.kt`
+  - `app/src/main/java/io/yerdna/architecturasos/ui/component/RegistroExperimento.kt`
+  - `app/src/main/java/io/yerdna/architecturasos/util/ExperimentoLogger.kt`
+  - `app/src/main/java/io/yerdna/architecturasos/util/EventoExperimento.kt`
+- Puede revisar `008-smart-parking-semaphore.md` (ya implementado, modulo `parqueointeligente`) como referencia directa de patron de codigo: `ViewModel` sin `Context`, `Thread` + `Handler(Looper.getMainLooper())` para volver al hilo principal (sin coroutines ni `viewModelScope` en la logica de negocio), sealed class de eventos de registro, y estructura de pantalla con `ExperimentoScaffold`, registro y dialogo de salida.
 
 ## Alcance cerrado
 
@@ -21,29 +36,30 @@ El modulo debe servir para exposicion academica de memoria en Android: la UI exp
 - No agregar dependencias nuevas.
 - No crear `Service`, proceso secundario, sockets, base de datos, `domain`, `usecase`, `mapper`, `di` ni arquitectura adicional.
 - No usar memoria nativa ni archivos temporales para inflar consumo.
-- No reservar memoria en el Main/UI Thread si la operacion puede congelar la UI.
+- La reserva de memoria (crear el `ByteArray` y tocar cada pagina) se ejecuta siempre en un `Thread` dedicado, nunca en el Main/UI Thread; el resultado se publica al estado mediante `Handler(Looper.getMainLooper()).post { ... }`, igual que `EjecutorParqueoInteligente`. No se usan coroutines ni `viewModelScope` en `MonstruoMemoriaViewModel`.
 - No mostrar boton manual para limpiar el registro de eventos.
 - No ejecutar `.\gradlew.bat build` automaticamente durante la implementacion; pedir confirmacion si el usuario quiere build.
 - La ruta de navegacion existente `Navegacion.Ruta.MonstruoMemoria` se reutiliza. No crear rutas globales adicionales.
 
 ## Archivos exactos a crear
 
-- `android/app/src/main/java/io/yerdna/architecturasos/memoria/EstadoMonstruoMemoria.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/memoria/MonstruoMemoriaViewModel.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaMonstruoMemoria.kt`
+- `app/src/main/java/io/yerdna/architecturasos/memoria/EstadoMonstruoMemoria.kt`
+- `app/src/main/java/io/yerdna/architecturasos/memoria/MonstruoMemoriaViewModel.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaMonstruoMemoria.kt`
 
 ## Archivos exactos a modificar
 
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/App.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/App.kt`
   - Reemplazar la pantalla temporal de `Navegacion.Ruta.MonstruoMemoria` por `PantallaMonstruoMemoria`.
-- `android/app/src/main/res/values/strings.xml`
-  - Agregar todos los textos visibles del modulo, acciones, estados, metricas, dialogos, secciones y descripciones de verificacion.
+- `app/src/main/res/values/strings.xml`
+  - Agregar solo los textos visibles nuevos del modulo (ver seccion `strings.xml` mas abajo); reutilizar los recursos genericos ya existentes.
 
 ## Archivos que no se deben modificar para este plan
 
-- `android/app/build.gradle.kts`
-- `android/gradle/libs.versions.toml`
-- `android/app/src/main/AndroidManifest.xml`
+- `app/build.gradle.kts`
+- `gradle/libs.versions.toml`
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaPanelExperimentos.kt` (la tarjeta y la ruta del dashboard ya existen)
 - Archivos generados dentro de `build/` o `.gradle/`
 - Otros planes dentro de `plans/`
 
@@ -51,6 +67,7 @@ El modulo debe servir para exposicion academica de memoria en Android: la UI exp
 
 Crear `EstadoMonstruoMemoria.kt` con modelos simples:
 
+- `const val TAG_MONSTRUO_MEMORIA = "OSPlayground/Memory"`, igual que `TAG_PARQUEO_INTELIGENTE` en `EstadoParqueoInteligente.kt`.
 - `enum class EstadoEjecucionMemoria`
   - `Inactivo`
   - `Reservando`
@@ -64,7 +81,7 @@ Crear `EstadoMonstruoMemoria.kt` con modelos simples:
   - `Moderado`
   - `Alto`
   - `PresionMemoria`
-- `data class BloqueMemoriaReservada`
+- `class BloqueMemoriaReservada` (clase normal, no `data class`: contiene un `ByteArray` y `equals`/`hashCode`/`toString` generados por `data class` serian enganosos)
   - `id: Int`
   - `tamanoMb: Int`
   - `bytes: ByteArray`
@@ -95,38 +112,69 @@ Crear `EstadoMonstruoMemoria.kt` con modelos simples:
   - `puedeReservar50Mb: Boolean`
   - `puedeLiberar: Boolean`
   - `puedeSolicitarGc: Boolean`
+  - `puedeReiniciar: Boolean`
   - `hayTrabajoActivo: Boolean`
+- `sealed class EventoRegistroMonstruoMemoria`, siguiendo el patron de `EventoRegistroParqueoInteligente`:
+  - `data object AperturaModulo`
+  - `data class IntentoReserva(val tamanoMb: Int)`
+  - `data class ReservaCompletada(val idBloque: Int, val tamanoMb: Int, val memoriaReservadaMb: Int)`
+  - `data class ReservaBloqueada(val tamanoMb: Int, val memoriaReservadaMb: Int)`
+  - `data class AdvertenciaPresion(val porcentajeUsado: Int)`
+  - `data class LiberacionMemoria(val bloquesLiberados: Int)`
+  - `data object SolicitudGc`
+  - `data object ReinicioConfirmado`
+  - `data object SalidaConfirmada`
+  - `data class ErrorTecnico(val mensaje: String?)`
 
 ## Responsabilidades
 
 ### `MonstruoMemoriaViewModel`
 
+`MonstruoMemoriaViewModel` nunca recibe ni guarda `Context`. Contrato publico exacto:
+
+- `fun reservar(tamanoMb: Int, onEvento: (EventoRegistroMonstruoMemoria) -> Unit)`
+- `fun liberarMemoria(onEvento: (EventoRegistroMonstruoMemoria) -> Unit)`
+- `fun solicitarGc(onEvento: (EventoRegistroMonstruoMemoria) -> Unit)`
+- `fun reiniciar(onEvento: (EventoRegistroMonstruoMemoria) -> Unit)`
+- `fun actualizarMedicionSistema(memoriaDisponibleSistemaMb: Long?)`
+- `fun limpiarRecursos()`
+
+Responsabilidades:
+
 - Mantener la lista privada de `BloqueMemoriaReservada`.
-- Reservar memoria real creando `ByteArray` y conservando referencias.
-- Tocar cada bloque reservado para forzar asignacion observable:
-  - escribir al menos un byte por pagina aproximada usando paso de `4096` bytes;
-  - no ejecutar loops infinitos.
+- `reservar(tamanoMb, onEvento)`:
+  - emitir `IntentoReserva(tamanoMb)`;
+  - si `memoriaReservadaMb + tamanoMb > limiteSeguroMb`: no crear `ByteArray`, emitir `ReservaBloqueada`, actualizar estado a `Advertencia` con `mensajeAdvertencia`, terminar sin tocar hilos;
+  - si pasa la validacion: pasar `estadoEjecucion` a `Reservando`, lanzar un `Thread` dedicado que crea el `ByteArray`, toca cada bloque (escribe al menos un byte cada `4096` bytes, sin loops infinitos) y publica el resultado con `Handler(Looper.getMainLooper()).post { ... }`;
+  - al publicar: guardar la referencia, medir memoria, agregar `MuestraMemoria` al historico, recalcular estado visual, y emitir `ReservaCompletada` o, si el resultado ya esta sobre el `80%` del limite, tambien `AdvertenciaPresion`.
 - Medir memoria con `Runtime.getRuntime()`:
   - usada: `(totalMemory() - freeMemory())`;
   - libre runtime: `freeMemory()`;
   - maxima runtime: `maxMemory()`.
-- Medir memoria disponible del sistema con `ActivityManager.MemoryInfo` cuando la pantalla entregue `Context` mediante una funcion de refresco segura.
-- Calcular estado visual y controles habilitados.
+- `actualizarMedicionSistema(memoriaDisponibleSistemaMb)`: guarda el valor ya calculado por la pantalla en el estado; el `ViewModel` nunca calcula `ActivityManager.MemoryInfo` directamente porque eso requiere `Context`.
+- Calcular estado visual y controles habilitados (incluido `puedeReiniciar`) despues de cada cambio de estado.
 - Exponer `var estado by mutableStateOf(EstadoMonstruoMemoria()) private set`, siguiendo el patron real de los `ViewModel` ya implementados.
-- Registrar eventos usando callbacks hacia la pantalla; el `ViewModel` no debe guardar `Context` ni logger de UI.
-- Capturar `OutOfMemoryError` defensivamente:
+- No guardar el `onEvento` recibido como campo persistente: cada funcion publica lo recibe como parametro y lo invoca directamente o dentro del `Handler.post`, igual que `iniciar(onEvento)` en `ParqueoInteligenteViewModel` pero sin campo `registrarEvento` porque aqui no hay una ejecucion de fondo que sobreviva a la llamada salvo el `Thread` de `reservar`.
+- Capturar `OutOfMemoryError` defensivamente dentro del `Thread` de `reservar`:
+  - publicar en el hilo principal via `Handler.post`;
   - pasar a `Error`;
   - liberar referencias reservadas;
   - solicitar medicion nueva;
   - reportar mensaje visible;
-  - registrar evento de error.
+  - emitir `ErrorTecnico`.
 - Limpiar recursos en `liberarMemoria()` y `onCleared()`.
 
 ### `PantallaMonstruoMemoria`
 
-- Usar `ExperimentoScaffold`.
-- Crear y poseer el `ExperimentoLogger` de pantalla con tag `OSPlayground/Memory`.
-- Conectar eventos del `ViewModel` con el logger de pantalla.
+- Usar `ExperimentoScaffold`, siguiendo exactamente el patron de `PantallaParqueoInteligente`:
+  - crear el `ViewModel` con `remember { MonstruoMemoriaViewModel() }`;
+  - crear el registro con `val registro = rememberRegistroExperimento(TAG_MONSTRUO_MEMORIA)`;
+  - definir una funcion local `registrarEvento(evento: EventoRegistroMonstruoMemoria)` con un `when` exhaustivo que llama `registro.logger.info/advertencia/error` segun el tipo de evento (info para `AperturaModulo`, `IntentoReserva`, `ReservaCompletada`, `LiberacionMemoria`, `SolicitudGc`, `ReinicioConfirmado`; advertencia para `ReservaBloqueada`, `AdvertenciaPresion`, `SalidaConfirmada`; error para `ErrorTecnico`);
+  - antes de la primera reserva de una ejecucion nueva (ver "Nueva ejecucion de experimento"), llamar `registro.limpiar()`;
+  - pasar `acciones = { BotonRegistroEventos(onClick = registro::abrir) }` a `ExperimentoScaffold`;
+  - renderizar `HojaRegistroEventos(visible = registro.visible, eventos = registro.eventos, onCerrar = registro::cerrar)` junto al contenido principal.
+- Al entrar en composicion (primer render), llamar `registrarEvento(EventoRegistroMonstruoMemoria.AperturaModulo)` y medir memoria inicial.
+- Calcular `memoriaDisponibleSistemaMb` con una funcion local no-Composable `obtenerMemoriaDisponibleSistemaMb(context: Context): Long?` que usa `LocalContext.current` y `ActivityManager.MemoryInfo`, y pasar el valor ya calculado a `viewModel.actualizarMedicionSistema(...)`. El `ViewModel` nunca recibe `Context`.
 - Mostrar:
   - nombre del experimento;
   - concepto tecnico;
@@ -135,12 +183,11 @@ Crear `EstadoMonstruoMemoria.kt` con modelos simples:
   - controles;
   - metricas;
   - historico de sesion;
-  - panel de eventos;
+  - panel de eventos (via `BotonRegistroEventos` + `HojaRegistroEventos`, que internamente usa `PanelRegistroEventos`);
   - seccion `Como verificar`.
-- Usar `PanelRegistroEventos` para el registro interno.
 - Usar `BackHandler` y boton volver con la misma regla de salida.
-- Mostrar `AlertDialog` si el usuario intenta salir mientras hay memoria reservada.
-- Usar `DisposableEffect` para limpieza defensiva al salir de composicion.
+- Mostrar `AlertDialog` si el usuario intenta salir mientras `hayTrabajoActivo` es `true`.
+- Usar `DisposableEffect` para limpieza defensiva al salir de composicion (llama `viewModel.limpiarRecursos()`).
 - No iniciar trabajo real desde `@Preview`; las previews deben usar datos de ejemplo.
 
 ### `App.kt`
@@ -151,18 +198,17 @@ Crear `EstadoMonstruoMemoria.kt` con modelos simples:
 
 ### `strings.xml`
 
-Agregar recursos para:
+Reutilizar directamente estos recursos ya existentes (no duplicarlos): `experimento_monstruo_memoria_nombre`, `experimento_monstruo_memoria_concepto`, `experimento_monstruo_memoria_descripcion` (lineas 37-39), `estado_inactivo`, `estado_error`, `estado_exitoso`, `accion_cancelar`, `accion_continuar`, `accion_copiar`, `accion_reiniciar`, `accion_volver`, `resultado_ultima_ejecucion`, `resultado_sin_ejecucion`, `seccion_como_verificar`, mas los recursos genericos de `registro_eventos_*`, `tipo_evento_*` y `origen_evento_*` ya usados por `PanelRegistroEventos`.
 
-- titulo y descripcion corta;
-- acciones `Reservar 10 MB`, `Reservar 25 MB`, `Reservar 50 MB`, `Liberar memoria`, `Solicitar GC`, `Salir y liberar`, `Continuar`;
-- estados de ejecucion;
-- estados visuales;
-- metricas;
-- advertencias;
-- errores;
-- dialogo de salida;
-- seccion `Como verificar`;
-- descripciones de cada comando.
+Crear unicamente los recursos especificos del modulo:
+
+- Estados: `estado_reservando`, `estado_advertencia`, `estado_liberado`, `estado_recolector_solicitado`.
+- Estados visuales: `estado_visual_saludable`, `estado_visual_moderado`, `estado_visual_alto`, `estado_visual_presion_memoria`.
+- Acciones: `accion_reservar_10mb`, `accion_reservar_25mb`, `accion_reservar_50mb`, `accion_liberar_memoria`, `accion_solicitar_gc`, `accion_salir_y_liberar` (mismo patron que `accion_salir_y_cancelar`).
+- Dialogo de salida: `dialogo_salir_monstruo_memoria_titulo`, `dialogo_salir_monstruo_memoria_mensaje` (mismo patron que `dialogo_salir_parqueo_inteligente_*`).
+- Metricas y etiquetas: textos con prefijo `monstruo_memoria_...` para cada metrica obligatoria (memoria usada, maxima runtime, libre runtime, disponible del sistema, reservada, bloques, limite seguro, porcentaje usado), mensajes de advertencia y error especificos del modulo.
+- Verificacion: `verificacion_meminfo_monstruo_memoria`, `verificacion_top_monstruo_memoria`, `verificacion_logcat_monstruo_memoria`, `verificacion_logcat_clear_monstruo_memoria` (mismo patron que `verificacion_logcat_parqueo_inteligente`).
+- Textos de eventos de registro necesarios para `registrarEvento(...)` en la pantalla (uno por caso de `EventoRegistroMonstruoMemoria`, mismo patron que `log_parqueo_inteligente_*`).
 
 ## Reglas de memoria
 
@@ -179,7 +225,7 @@ Agregar recursos para:
 - Umbral de advertencia:
   - mostrar advertencia desde `80%` del `limiteSeguroMb`.
 - Umbral de bloqueo:
-  - deshabilitar botones que excedan el `limiteSeguroMb`.
+  - los botones de reserva permanecen habilitados (no se deshabilitan por tamano); una reserva que excederia `limiteSeguroMb` se bloquea en tiempo de ejecucion dentro de `reservar()`: no crea `ByteArray`, emite `ReservaBloqueada` y pasa el estado a `Advertencia` con `mensajeAdvertencia` visible.
 - Historico:
   - guardar maximo `30` muestras por sesion;
   - eliminar la muestra mas antigua cuando se exceda el limite.
@@ -194,13 +240,15 @@ Agregar recursos para:
 |---|---|---|---|
 | `Inactivo` | Pantalla recien abierta o memoria liberada sin bloques | Reservar 10/25/50 MB, solicitar GC, volver sin dialogo | `Reservando`, `RecolectorSolicitado` |
 | `Reservando` | Usuario toca una reserva permitida | Sin reservas adicionales, sin liberar hasta terminar la accion | `Exitoso`, `Advertencia`, `Error` |
-| `Exitoso` | Reserva completada bajo 80% del limite | Reservar dentro del limite, liberar, solicitar GC, volver con dialogo | `Reservando`, `Liberado`, `RecolectorSolicitado` |
-| `Advertencia` | Reserva completada desde 80% del limite seguro o intento bloqueado | Reservar solo botones aun seguros, liberar, solicitar GC, volver con dialogo | `Reservando`, `Liberado`, `RecolectorSolicitado`, `Error` |
-| `Error` | Error recuperable u `OutOfMemoryError` capturado | Reservar desde estado limpio, solicitar GC, volver sin dialogo si no quedan bloques | `Reservando`, `RecolectorSolicitado`, `Inactivo` |
-| `Liberado` | Usuario libera referencias o confirma salida | Reservar 10/25/50 MB, solicitar GC, volver sin dialogo | `Reservando`, `RecolectorSolicitado` |
-| `RecolectorSolicitado` | Usuario solicita GC | Reservar dentro del limite, liberar si quedan bloques, volver con dialogo si quedan bloques | `Reservando`, `Liberado`, `Exitoso`, `Advertencia` |
+| `Exitoso` | Reserva completada bajo 80% del limite | Reservar 10/25/50 MB (el bloqueo por `limiteSeguroMb` se evalua en tiempo de ejecucion dentro de `reservar()`, no deshabilitando botones), liberar, solicitar GC, reiniciar, volver con dialogo | `Reservando`, `Liberado`, `RecolectorSolicitado` |
+| `Advertencia` | Reserva completada desde 80% del limite seguro o intento bloqueado | Reservar 10/25/50 MB (mismo criterio que en `Exitoso`), liberar, solicitar GC, reiniciar, volver con dialogo | `Reservando`, `Liberado`, `RecolectorSolicitado`, `Error` |
+| `Error` | Error recuperable u `OutOfMemoryError` capturado | Reservar desde estado limpio, solicitar GC, reiniciar, volver sin dialogo (`hayTrabajoActivo` es siempre `false` en `Error`, porque las referencias ya se liberaron) | `Reservando`, `RecolectorSolicitado`, `Inactivo` |
+| `Liberado` | Usuario libera referencias o confirma salida | Reservar 10/25/50 MB, solicitar GC, reiniciar, volver sin dialogo | `Reservando`, `RecolectorSolicitado` |
+| `RecolectorSolicitado` | Usuario solicita GC | Reservar 10/25/50 MB (mismo criterio que en `Exitoso`), liberar si quedan bloques, reiniciar, volver con dialogo si quedan bloques | `Reservando`, `Liberado`, `Exitoso`, `Advertencia` |
 
 `hayTrabajoActivo` debe ser `true` cuando existan bloques reservados o el estado sea `Reservando`. Debe ser `false` cuando no queden bloques y no haya reserva en curso.
+
+`Reiniciar` (`puedeReiniciar`) esta disponible en todos los estados excepto `Reservando`, independientemente de si hay bloques activos; ver "Controles por estado".
 
 ## Estado visual del monstruo
 
@@ -238,55 +286,65 @@ No convertir metricas en estados.
 
 ## Controles por estado
 
-- `Reservar 10 MB`
-  - habilitado solo si no esta `Reservando` y la reserva no supera `limiteSeguroMb`.
-- `Reservar 25 MB`
-  - habilitado solo si no esta `Reservando` y la reserva no supera `limiteSeguroMb`.
-- `Reservar 50 MB`
-  - habilitado solo si no esta `Reservando` y la reserva no supera `limiteSeguroMb`.
+- `Reservar 10 MB`, `Reservar 25 MB`, `Reservar 50 MB`
+  - `puedeReservar10Mb`, `puedeReservar25Mb` y `puedeReservar50Mb` se calculan todos con la misma formula (`estadoEjecucion != Reservando`); no se deshabilitan por tamano de la reserva.
+  - al tocarlos, `reservar(tamanoMb, onEvento)` valida el limite en tiempo de ejecucion; ver "Umbral de bloqueo".
 - `Liberar memoria`
-  - habilitado si existe al menos un bloque reservado y no esta `Reservando`.
+  - habilitado si existe al menos un bloque reservado y `estadoEjecucion` no es `Reservando`.
   - libera todas las referencias del experimento.
 - `Solicitar GC`
-  - habilitado si no esta `Reservando`.
+  - habilitado si `estadoEjecucion` no es `Reservando`.
   - llama `System.gc()` solo como demostracion y muestra texto visible indicando que Android decide cuando recolectar.
+- `Reiniciar`
+  - habilitado si `estadoEjecucion` no es `Reservando` (sin exigir bloques activos, a diferencia de `Liberar memoria`).
+  - limpia bloques, historico, `resultadoUltimaAccion`, `mensajeError` y `mensajeAdvertencia`; vuelve a `Inactivo`; mide memoria despues; emite `ReinicioConfirmado`.
 - `Volver`
   - si `hayTrabajoActivo` es `false`, navega inmediatamente.
   - si `hayTrabajoActivo` es `true`, muestra `AlertDialog`.
-- `Reset`
-  - no crear boton separado si `Liberar memoria` deja el modulo estable para otra demostracion.
 
 ## Ciclo de vida y limpieza
 
 - Al abrir pantalla:
   - crear estado inicial;
   - medir memoria actual;
-  - mostrar registro vacio.
+  - agregar muestra al historico;
+  - mostrar registro vacio;
+  - registrar evento `AperturaModulo`.
 - Al reservar:
   - validar limite;
-  - registrar evento de intento;
+  - registrar evento `IntentoReserva`;
   - reservar `ByteArray`;
   - tocar el bloque;
   - guardar referencia;
   - medir memoria;
   - agregar muestra al historico;
   - actualizar estado visual;
-  - registrar evento de exito o advertencia.
+  - registrar evento `ReservaCompletada` (y `AdvertenciaPresion` si aplica).
 - Al bloquear reserva insegura:
   - no crear `ByteArray`;
   - mantener referencias existentes;
+  - medir memoria;
+  - agregar muestra al historico;
   - mostrar advertencia visible;
-  - registrar advertencia.
+  - registrar evento `ReservaBloqueada`.
 - Al liberar:
   - limpiar lista de bloques;
   - medir memoria antes y despues de liberar referencias;
+  - agregar muestra al historico con la medicion posterior a liberar;
   - no depender de que GC ocurra inmediatamente;
-  - registrar evento de liberacion.
+  - registrar evento `LiberacionMemoria`.
 - Al solicitar GC:
   - llamar `System.gc()`;
   - medir despues de la solicitud;
+  - agregar muestra al historico;
   - mostrar mensaje: Android decide cuando recolectar;
-  - registrar evento.
+  - registrar evento `SolicitudGc`.
+- Al reiniciar:
+  - limpiar lista de bloques, historico, `resultadoUltimaAccion`, `mensajeError` y `mensajeAdvertencia`;
+  - volver a `Inactivo`;
+  - medir memoria;
+  - agregar muestra al historico;
+  - registrar evento `ReinicioConfirmado`.
 - Al salir con memoria reservada:
   - mostrar `AlertDialog`;
   - si confirma, liberar referencias antes de `onVolver`;
@@ -300,19 +358,20 @@ No convertir metricas en estados.
 
 ## Registro de eventos
 
-- Tag estable: `OSPlayground/Memory`.
-- La pantalla es dueña del logger.
-- El `ViewModel` emite eventos hacia la pantalla mediante callbacks o un flujo simple de eventos.
-- Registrar en UI y Logcat:
-  - apertura del modulo;
-  - intento de reserva;
-  - reserva completada;
-  - reserva bloqueada por limite seguro;
-  - advertencia de presion de memoria;
-  - liberacion de referencias;
-  - solicitud de GC;
-  - salida con limpieza;
-  - errores recuperados.
+- Tag estable: `TAG_MONSTRUO_MEMORIA` (`"OSPlayground/Memory"`), definido en `EstadoMonstruoMemoria.kt`.
+- La pantalla es dueña del logger (`rememberRegistroExperimento(TAG_MONSTRUO_MEMORIA)`).
+- El `ViewModel` emite eventos hacia la pantalla mediante el parametro `onEvento: (EventoRegistroMonstruoMemoria) -> Unit` que recibe cada funcion publica (ver "Responsabilidades > `MonstruoMemoriaViewModel`"). No se usa `Flow`, `LiveData` ni ningun otro mecanismo.
+- Registrar en UI y Logcat, uno por cada caso de `EventoRegistroMonstruoMemoria`:
+  - `AperturaModulo`: apertura del modulo;
+  - `IntentoReserva`: intento de reserva;
+  - `ReservaCompletada`: reserva completada;
+  - `ReservaBloqueada`: reserva bloqueada por limite seguro;
+  - `AdvertenciaPresion`: advertencia de presion de memoria;
+  - `LiberacionMemoria`: liberacion de referencias;
+  - `SolicitudGc`: solicitud de GC;
+  - `ReinicioConfirmado`: reinicio del modulo;
+  - `SalidaConfirmada`: salida con limpieza;
+  - `ErrorTecnico`: errores recuperados.
 - No duplicar logs directos normales si se usa `ExperimentoLogger`.
 - `Log.e` directo solo queda permitido como fallback tecnico si no se puede reportar por el canal normal.
 
@@ -339,7 +398,7 @@ No convertir metricas en estados.
 
 ## Como verificar
 
-No ejecutar build automaticamente para este plan. Si se requiere compilar, pedir confirmacion antes de ejecutar desde `android/`:
+No ejecutar build automaticamente para este plan. Si se requiere compilar, pedir confirmacion antes de ejecutar desde la raiz del repositorio (no existe carpeta `android/`):
 
 ```powershell
 .\gradlew.bat build
@@ -383,7 +442,7 @@ Android Studio Profiler > Memory:
 Verificacion de codigo sin build:
 
 ```powershell
-Select-String -Path android/app/src/main/java/io/yerdna/architecturasos/memoria/*.kt,android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaMonstruoMemoria.kt -Pattern "Log\\.i|Log\\.w|Log\\.d|grep|OutOfMemoryError"
+Select-String -Path app/src/main/java/io/yerdna/architecturasos/memoria/*.kt,app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaMonstruoMemoria.kt -Pattern "Log\.i|Log\.w|Log\.d|grep|OutOfMemoryError"
 ```
 
 Interpreta resultados asi:
@@ -399,11 +458,12 @@ Interpreta resultados asi:
 - [ ] Cada bloque reservado se toca en memoria para que la reserva sea observable.
 - [ ] La pantalla muestra memoria usada, memoria maxima, memoria libre runtime, memoria disponible del sistema cuando aplique, memoria reservada, cantidad de bloques, limite seguro, porcentaje usado y estado visual.
 - [ ] El estado visual cambia entre `Saludable`, `Moderado`, `Alto` y `PresionMemoria` segun los umbrales definidos.
-- [ ] La app bloquea reservas que superen `limiteSeguroMb`.
+- [ ] Los botones de reserva permanecen habilitados y una reserva que superaria `limiteSeguroMb` se bloquea en tiempo de ejecucion (sin crear `ByteArray`), pasando el estado a `Advertencia`.
 - [ ] Al llegar a `80%` del limite seguro, la UI muestra advertencia clara.
 - [ ] `Liberar memoria` elimina referencias y deja el modulo listo para otra demostracion.
 - [ ] `Solicitar GC` existe, registra evento y aclara que Android decide cuando recolectar.
-- [ ] El historico mantiene maximo `30` muestras de la sesion.
+- [ ] `Reiniciar` existe, esta habilitado siempre que `estadoEjecucion` no sea `Reservando`, limpia bloques/historico/mensajes y vuelve a `Inactivo`.
+- [ ] El historico agrega una muestra en cada medicion (apertura, reserva, bloqueo, liberacion, GC, reinicio) y mantiene maximo `30` muestras de la sesion.
 - [ ] Salir con memoria reservada muestra confirmacion para boton volver, boton atras del sistema y gesto atras.
 - [ ] Confirmar salida libera referencias antes de navegar.
 - [ ] Cancelar salida mantiene la pantalla y las referencias actuales.
@@ -415,12 +475,22 @@ Interpreta resultados asi:
 - [ ] No se agregan dependencias ni cambios de Gradle.
 - [ ] La verificacion documentada usa comandos compatibles con Windows y explica que valida cada comando.
 
-## Items pendientes para ejecutar sin asumir decisiones
+## Decisiones resueltas
 
-### 1. Alcance academico exacto de paginacion y memoria virtual
+- **Alcance academico de paginacion y memoria virtual**: el codigo se limita a reservas controladas de heap con `ByteArray`, medicion con `Runtime` y `ActivityManager.MemoryInfo`, y verificacion externa con Android Profiler y `dumpsys meminfo`. La UI agrega una explicacion breve localizada de que Android administra memoria virtual y paginacion internamente, y que este experimento demuestra el efecto observable desde la app sin intentar controlar paginas directamente. (Aprobada por el usuario.)
+- **Raiz real del proyecto**: no existe carpeta `android/`; todas las rutas de archivo y el comando `gradlew.bat` se ejecutan desde la raiz del repositorio (ver "Estructura real del proyecto (corregida)").
+- **Patron de registro de eventos**: se usa el patron cerrado por `011-panel-registro-eventos.md` y ya aplicado en los 7 modulos existentes: `rememberRegistroExperimento(TAG_MONSTRUO_MEMORIA)`, `ExperimentoScaffold(acciones = { BotonRegistroEventos(onClick = registro::abrir) })`, `HojaRegistroEventos(...)` y `registro.limpiar()` al iniciar una ejecucion nueva. No se usa `PanelRegistroEventos` directamente desde la pantalla.
+- **Modelo de eventos del `ViewModel`**: `sealed class EventoRegistroMonstruoMemoria` con casos concretos (`AperturaModulo`, `IntentoReserva`, `ReservaCompletada`, `ReservaBloqueada`, `AdvertenciaPresion`, `LiberacionMemoria`, `SolicitudGc`, `ReinicioConfirmado`, `SalidaConfirmada`, `ErrorTecnico`), pasado como parametro `onEvento` en cada funcion publica del `ViewModel`. No se usan callbacks genericos ni `Flow`.
+- **`Context` y medicion de memoria del sistema**: `MonstruoMemoriaViewModel` nunca recibe `Context`. La pantalla calcula `ActivityManager.MemoryInfo` con `LocalContext.current` en una funcion local no-Composable y pasa el valor ya calculado (`Long?`) a `viewModel.actualizarMedicionSistema(...)`. No se crea un `Controlador...` porque no hay `Service`/`Messenger` involucrado.
+- **Hilo de ejecucion de la reserva**: `reservar()` lanza un `Thread` dedicado (crear `ByteArray` + tocar paginas) y publica el resultado con `Handler(Looper.getMainLooper()).post { ... }`, igual que `EjecutorParqueoInteligente`. No se usan coroutines ni `viewModelScope` en el `ViewModel`.
+- **`BloqueMemoriaReservada`**: se declara como `class` normal, no `data class`, porque contiene un `ByteArray`.
+- **Botones de reserva vs. bloqueo por limite seguro**: los botones `Reservar 10/25/50 MB` quedan habilitados siempre que `estadoEjecucion` no sea `Reservando`; el bloqueo por `limiteSeguroMb` ocurre en tiempo de ejecucion dentro de `reservar()` (no crea `ByteArray`, emite `ReservaBloqueada`, pasa a `Advertencia`), no deshabilitando el boton.
+- **Estado `Error`**: `hayTrabajoActivo` es siempre `false` en `Error` porque las referencias ya se liberaron; `Volver` nunca muestra dialogo desde `Error`.
+- **Boton `Reiniciar`**: existe como boton separado (requerido por `docs/app-requirements.md`), habilitado siempre que `estadoEjecucion` no sea `Reservando` (sin exigir bloques activos), reutilizando `R.string.accion_reiniciar`. Limpia bloques, historico, `resultadoUltimaAccion`, `mensajeError` y `mensajeAdvertencia`, vuelve a `Inactivo` y mide memoria despues.
+- **Historico de memoria**: toda medicion (apertura, reservar, bloqueo de reserva, liberar, solicitar GC, reiniciar) agrega una `MuestraMemoria`, respetando el maximo de `30`.
+- **Comando `Select-String` de verificacion**: corregido a una sola barra invertida (`Log\.i|Log\.w|Log\.d|grep|OutOfMemoryError`) y a rutas sin prefijo `android/`.
+- **Recursos de `strings.xml`**: se reutilizan los recursos genericos ya existentes (`experimento_monstruo_memoria_*`, `estado_inactivo`, `estado_error`, `estado_exitoso`, `accion_cancelar`, `accion_continuar`, `accion_copiar`, `accion_reiniciar`, `accion_volver`, `resultado_ultima_ejecucion`, `resultado_sin_ejecucion`, `seccion_como_verificar`, `registro_eventos_*`, `tipo_evento_*`, `origen_evento_*`); solo se crean los recursos especificos del modulo listados en la seccion `strings.xml`.
 
-- Punto: el PDF original exige abordar "Gestion de Memoria Virtual y Paginacion", mientras que `docs/app-requirements.md` define para Memory Monster una manipulacion controlada del consumo de memoria de la aplicacion observable con Android Profiler y `dumpsys meminfo`.
-- Por que bloquea o puede causar implementaciones distintas: un agente podria implementar solo reservas de heap administrado por ART, o podria intentar explicar/manipular paginacion, page faults, memoria nativa o `/proc`, cambiando el alcance tecnico y aumentando riesgo de complejidad o inestabilidad.
-- Solucion concreta alineada con `AGENTS.md`, `lessons.md` y `docs/`: cerrar el alcance del codigo a reservas controladas de heap con `ByteArray`, medicion con `Runtime` y `ActivityManager.MemoryInfo`, y verificacion externa con Android Profiler y `dumpsys meminfo`. Agregar en la UI una explicacion breve localizada de que Android administra memoria virtual y paginacion internamente, y que este experimento demuestra el efecto observable desde la app sin intentar controlar paginas directamente.
+## Bloqueos restantes
 
-> Aprobada sugerencia
+Ninguno. No queda ninguna decision abierta que requiera respuesta del usuario antes de implementar este plan.

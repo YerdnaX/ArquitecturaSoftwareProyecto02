@@ -104,6 +104,15 @@ private val experimentos = listOf(
         conceptoResId = R.string.experimento_monstruo_memoria_concepto,
         descripcionResId = R.string.experimento_monstruo_memoria_descripcion,
         ruta = Navegacion.Ruta.MonstruoMemoria
+    ),
+    ExperimentoResumen(
+        id = "diagnostico_sistema",
+        icono = "SD",
+        colorIcono = Color(0xFF495057),
+        nombreResId = R.string.experimento_diagnostico_sistema_nombre,
+        conceptoResId = R.string.experimento_diagnostico_sistema_concepto,
+        descripcionResId = R.string.experimento_diagnostico_sistema_descripcion,
+        ruta = Navegacion.Ruta.Diagnosticos
     )
 )
 

@@ -2,14 +2,26 @@
 
 ## Objetivo
 
-Agregar la pantalla `System Diagnostics`, cerrar la observabilidad transversal de la aplicacion y dejar verificable que los experimentos generan actividad real observable con herramientas Android/ADB.
+Agregar la pantalla `System Diagnostics` (nombre de referencia en ingles usado por este plan; el titulo visible en la UI es en espanol, ver seccion `strings.xml`), cerrar la observabilidad transversal de la aplicacion y dejar verificable que los experimentos generan actividad real observable con herramientas Android/ADB.
 
 Este plan no implementa nuevos mecanismos de sistemas operativos. Solo integra una pantalla educativa de diagnostico, reutiliza patrones comunes ya existentes y corrige la documentacion/verificacion de los 8 experimentos cuando falte o contradiga decisiones cerradas.
+
+## Estructura real del proyecto (corregida)
+
+La raiz real del modulo Android **no** tiene un prefijo `android/`. El proyecto Gradle vive directamente en la raiz del repositorio:
+
+```txt
+app/src/main/java/io/yerdna/architecturasos/
+app/src/main/res/values/strings.xml
+gradlew.bat   (en la raiz del repositorio, sin carpeta android/)
+```
+
+Cualquier referencia previa a `android/app/...` o `cd android` es incorrecta para este proyecto y no debe usarse. Todas las rutas de este plan usan la raiz real.
 
 ## Contexto obligatorio aplicado
 
 - Proyecto Android nativo con Kotlin, Jetpack Compose, Material 3 y AndroidX.
-- Raiz Android real: `android/`.
+- Raiz real del proyecto: la raiz del repositorio (no existe carpeta `android/`; ver "Estructura real del proyecto (corregida)").
 - Paquete principal: `io.yerdna.architecturasos`.
 - No agregar dependencias nuevas.
 - No crear arquitectura compleja, `domain`, `usecase`, `mapper`, `di` o capas vacias.
@@ -38,15 +50,16 @@ Este plan debe implementarse despues de que esten aprobados e implementados:
 - `007-ticket-rush-mutex.md`
 - `008-smart-parking-semaphore.md`
 - `009-memory-monster-memory.md`
+- `011-panel-registro-eventos.md`
 
-Si alguno de esos planes no existe implementado al iniciar este plan, se debe detener la implementacion y actualizar primero el estado real de dependencias. No se deben implementar funcionalidades faltantes de experimentos dentro de este plan.
+Todos los planes anteriores, incluido `011-panel-registro-eventos.md`, ya estan implementados en el codigo actual. Si en el futuro alguno dejara de estarlo, se debe detener la implementacion y actualizar primero el estado real de dependencias. No se deben implementar funcionalidades faltantes de experimentos dentro de este plan.
 
 ## Alcance incluido
 
 - Crear la pantalla `PantallaDiagnosticoSistema`.
 - Crear datos estaticos simples para herramientas de diagnostico.
 - Agregar una entrada de dashboard para abrir diagnosticos sin estado global.
-- Agregar ruta de navegacion si la navegacion comun ya existe.
+- Agregar la ruta de navegacion `Navegacion.Ruta.Diagnosticos` a la navegacion comun ya existente (Navigation Compose).
 - Crear o ajustar un componente comun simple para listar comandos copiables si no existe uno equivalente.
 - Revisar y corregir las secciones `Como verificar` de los 8 experimentos para que usen comandos concretos, compatibles con Windows y vinculados al comportamiento real del modulo.
 - Revisar que los textos visibles nuevos queden en `strings.xml`.
@@ -67,29 +80,32 @@ Si alguno de esos planes no existe implementado al iniciar este plan, se debe de
 
 ## Archivos exactos a crear
 
-- `android/app/src/main/java/io/yerdna/architecturasos/diagnostics/HerramientaDiagnostico.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/diagnostics/RepositorioDiagnosticoSistema.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaDiagnosticoSistema.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/component/ListaComandosVerificacion.kt`, solo si no existe un componente comun equivalente.
+- `app/src/main/java/io/yerdna/architecturasos/diagnostico/HerramientaDiagnostico.kt`
+- `app/src/main/java/io/yerdna/architecturasos/diagnostico/RepositorioDiagnosticoSistema.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaDiagnosticoSistema.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/component/ListaComandosVerificacion.kt`
+
+El paquete usa `diagnostico` (singular, en espanol) para seguir la convencion real ya usada por `memoria`, `procesos`, `restaurante`, `hilos`, `bancocaotico`, `carreraboletos`, `parqueointeligente` y `redagentes`. No usar `diagnostics` (ingles).
 
 ## Archivos exactos a modificar
 
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/dashboard/PantallaDashboard.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/App.kt`
-- `android/app/src/main/res/values/strings.xml`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaPanelExperimentos.kt` (dashboard real; no existe `PantallaDashboard.kt` ni carpeta `ui/dashboard/`)
+- `app/src/main/java/io/yerdna/architecturasos/ui/Navegacion.kt` (agregar `Ruta.Diagnosticos`)
+- `app/src/main/java/io/yerdna/architecturasos/ui/App.kt`
+- `app/src/main/res/values/strings.xml`
 
-Modificar tambien estos archivos solo si existen y les falta o contradicen la seccion `Como verificar`, logs, limpieza o controles ya definidos:
+Modificar tambien estos archivos solo si les falta o contradicen la seccion `Como verificar`, logs, limpieza o controles ya definidos por sus planes correspondientes (nombres reales verificados contra el codigo actual):
 
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaFabricaRobots.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaRestauranteIpc.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaRedAgentes.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaCarreraHilos.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaBancoCaos.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaCarreraTickets.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaEstacionamientoInteligente.kt`
-- `android/app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaMonstruoMemoria.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaFabricaRobots.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaRestauranteIpc.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaRedAgentes.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaCarreraHilos.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaBancoCaotico.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaCarreraBoletos.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaParqueoInteligente.kt`
+- `app/src/main/java/io/yerdna/architecturasos/ui/screen/PantallaMonstruoMemoria.kt`
 
-Si los nombres reales de las pantallas difieren por planes previos, usar los nombres reales existentes y mantener nombres propios nuevos en espanol. No crear pantallas duplicadas.
+Estos 8 nombres ya son los nombres reales existentes en el codigo (confirmado contra `app/src/main/java/io/yerdna/architecturasos/ui/screen/`). No crear pantallas duplicadas ni variantes con otro nombre.
 
 ## Responsabilidades por archivo
 
@@ -166,7 +182,7 @@ No debe hacer llamadas reales a ADB, shell, Profiler ni red.
 
 Debe mostrar:
 
-- Titulo `System Diagnostics`.
+- Titulo visible en espanol: `Diagnostico del Sistema` (recurso `experimento_diagnostico_sistema_nombre`, ver seccion `strings.xml`). `System Diagnostics` es solo el nombre de referencia en ingles usado por este plan y por `docs/app-requirements.md`; no debe aparecer como texto visible en la UI.
 - Explicacion breve de que la app genera actividad real observable, pero no reimplementa herramientas externas.
 - Lista agrupada o seccionada de herramientas desde `RepositorioDiagnosticoSistema`.
 - Para cada herramienta:
@@ -203,42 +219,63 @@ Responsabilidades:
 - No ejecutar comandos.
 - No depender de ningun experimento concreto.
 
-Si ya existe un componente equivalente para `Como verificar`, modificar ese componente en lugar de crear uno nuevo.
+Ya se verifico contra el codigo actual que no existe un componente comun equivalente: cada pantalla de experimento (`PantallaParqueoInteligente.kt`, `PantallaMonstruoMemoria.kt`, etc.) define su propio composable privado `ComoVerificarX` y su propia `data class ComandoVerificacionX` duplicada, sin componente compartido. Por eso este plan crea `ListaComandosVerificacion.kt` como componente nuevo.
 
-### `PantallaDashboard.kt`
+`ListaComandosVerificacion.kt` se usa **unicamente** dentro de `PantallaDiagnosticoSistema.kt`. Este plan **no** refactoriza los `ComoVerificarX` privados ya existentes en los 8 experimentos para que usen el componente nuevo: eso ampliaria el alcance a un refactor no solicitado por los criterios de aceptacion y arriesgaria romper pantallas ya funcionando. Cada experimento conserva su propia seccion `Como verificar` tal como esta implementada.
 
-Debe agregar una entrada para `System Diagnostics` con:
+### `PantallaPanelExperimentos.kt` (dashboard real)
 
-- icono o simbolo consistente con las tarjetas existentes;
-- nombre visible;
-- concepto tecnico `Observabilidad Android`;
-- descripcion breve;
-- boton para abrir.
+El dashboard ya renderiza sus tarjetas desde una lista privada `experimentos: List<ExperimentoResumen>` (`ExperimentoResumen.kt`: `id`, `icono`, `colorIcono`, `nombreResId`, `conceptoResId`, `descripcionResId`, `ruta`) y `TarjetaExperimento` reutilizable. Agregar diagnosticos siguiendo exactamente el mismo patron, sin crear un modelo ni un componente de tarjeta nuevo:
+
+- Agregar un `ExperimentoResumen` mas a la lista `experimentos`:
+  - `id = "diagnostico_sistema"`
+  - `icono = "SD"`
+  - `colorIcono = Color(0xFF495057)` (color no usado por ninguna tarjeta existente)
+  - `nombreResId = R.string.experimento_diagnostico_sistema_nombre`
+  - `conceptoResId = R.string.experimento_diagnostico_sistema_concepto` (texto: `Observabilidad Android`)
+  - `descripcionResId = R.string.experimento_diagnostico_sistema_descripcion`
+  - `ruta = Navegacion.Ruta.Diagnosticos`
+- No modificar `TarjetaExperimento`, `obtenerExperimentoPorRuta` ni el resto del archivo.
 
 No debe agregar estado global de diagnostico ni estado por experimento.
 
+### `Navegacion.kt`
+
+Agregar `const val Diagnosticos = "diagnosticos"` dentro de `Navegacion.Ruta`, siguiendo el mismo patron que las 8 rutas existentes (`Panel`, `FabricaRobots`, `RestauranteIpc`, `RedAgentes`, `CarreraHilos`, `BancoCaotico`, `CarreraBoletos`, `ParqueoInteligente`, `MonstruoMemoria`).
+
 ### `App.kt`
 
-Debe registrar la pantalla `System Diagnostics` en el mecanismo de navegacion existente.
+La app ya usa Navigation Compose (`NavHost`, `composable`, `rememberNavController`; ver `App.kt` y `Navegacion.kt` actuales). Registrar la pantalla de diagnosticos exactamente con el mismo patron que las demas rutas, sin condicionales:
 
-Si la app no usa Navigation Compose y tiene navegacion simple por estado local, agregar una opcion de pantalla local. No agregar dependencia de navegacion nueva.
+```kotlin
+composable(Navegacion.Ruta.Diagnosticos) {
+    PantallaDiagnosticoSistema(
+        onVolver = { navController.popBackStack() }
+    )
+}
+```
+
+No agregar dependencia de navegacion nueva ni un mecanismo de navegacion alternativo.
 
 ### `strings.xml`
 
-Debe incluir todos los textos visibles nuevos:
+Debe incluir todos los textos visibles nuevos, en espanol. Como minimo:
 
-- titulos;
-- descripciones;
-- nombres de acciones;
-- categorias;
-- mensajes de copia;
-- descripciones de comandos;
-- textos de limitaciones;
-- textos de comparacion Android vs Linux.
+- `experimento_diagnostico_sistema_nombre` = "Diagnostico del Sistema" (tarjeta del dashboard y titulo de la pantalla);
+- `experimento_diagnostico_sistema_concepto` = "Observabilidad Android";
+- `experimento_diagnostico_sistema_descripcion` (una linea corta para la tarjeta del dashboard);
+- descripciones de cada herramienta (`que valida`, `cuando usarla`, `limitacion`) con prefijo `diagnostico_`;
+- nombres de categorias (`CategoriaDiagnostico`) con prefijo `diagnostico_categoria_`;
+- textos de comandos (descripcion, cuando ejecutarlo, como interpretarlo) con prefijo `diagnostico_comando_`;
+- textos de la seccion de comparacion Android vs Linux con prefijo `diagnostico_comparacion_`;
+- textos de la guia de demostracion en vivo con prefijo `diagnostico_demo_`;
+- `accion_copiar` ya existe (reutilizar, no duplicar).
 
-Los comandos literales pueden vivir en modelos Kotlin porque son contenido tecnico copiable.
+Los comandos literales (el texto exacto del comando ADB/PowerShell) pueden vivir en los modelos Kotlin de `RepositorioDiagnosticoSistema.kt` porque son contenido tecnico copiable, igual que en los `ComoVerificarX` de los experimentos existentes. Las descripciones que los acompanan (que valida, cuando ejecutarlo, como interpretarlo) si van en `strings.xml`.
 
 ## Herramientas diagnosticas obligatorias
+
+Exactamente 10 entradas `HerramientaDiagnostico` (una por subseccion de esta lista). `atrace` no es una entrada separada: se documenta dentro del campo `limitacion` de `Perfetto/System Trace` como alternativa cuando este disponible en el dispositivo, siguiendo la resolucion ya cerrada mas abajo en "Decisiones resueltas". Esto cierra cualquier duda sobre si la pantalla debe mostrar 10 u 11 tarjetas.
 
 ### Android Profiler
 
@@ -266,7 +303,7 @@ Los comandos literales pueden vivir en modelos Kotlin porque son contenido tecni
 - Categoria: `IPC`.
 - Valida comunicacion real entre proceso cliente y servicio remoto mediante `Messenger`.
 - Experimento principal: `Restaurant IPC`.
-- Limitacion: no usar AIDL, `LocalBinder`, broadcasts ni archivos temporales si el plan 003 decidio `Messenger`.
+- Limitacion: el plan 003 (ya implementado) decidio usar `Messenger` como mecanismo de Binder IPC; no se usa AIDL, `LocalBinder`, broadcasts ni archivos temporales.
 
 ### sockets
 
@@ -280,7 +317,7 @@ Los comandos literales pueden vivir en modelos Kotlin porque son contenido tecni
 - Categoria: `TRACING`.
 - Valida actividad de CPU y threads durante carga controlada.
 - Experimento principal: `Thread Race`.
-- Limitacion: la disponibilidad depende de Android Studio, version de Android y dispositivo/emulador.
+- Limitacion: la disponibilidad depende de Android Studio, version de Android y dispositivo/emulador. La herramienta concreta se selecciona segun disponibilidad: Android Studio Profiler/System Trace o Perfetto primero; `atrace` solo cuando este disponible en el dispositivo. La app no ejecuta ninguna de estas herramientas.
 
 ### `dumpsys`
 
@@ -349,7 +386,7 @@ Valida consumo de CPU mientras se ejecuta `Thread Race` o cualquier experimento 
 ### Logcat por tag
 
 ```powershell
-adb logcat -d -s OSPlayground/ProcessLab OSPlayground/BinderIPC OSPlayground/SocketLab OSPlayground/ThreadRace OSPlayground/ChaosBank OSPlayground/Mutex OSPlayground/Semaphore OSPlayground/Memory
+adb logcat -d -s OSPlayground/FabricaRobots OSPlayground/BinderIPC OSPlayground/SocketLab OSPlayground/ThreadRace OSPlayground/ChaosBank OSPlayground/Mutex OSPlayground/Semaphore OSPlayground/Memory
 ```
 
 Valida eventos emitidos por los experimentos y termina la lectura del buffer actual.
@@ -380,16 +417,16 @@ Ayuda a ubicar services del proyecto en la salida de `dumpsys activity services`
 
 ## Tags Logcat obligatorios
 
-Cada experimento debe documentar y usar un tag estable:
+Cada experimento debe documentar y usar un tag estable. Estos son los valores reales ya implementados en el codigo (verificados contra las constantes `TAG_*` de cada modulo); `docs/app-requirements.md` usa `OSPlayground/ProcessLab` solo como ejemplo generico, pero el codigo real de `Robot Factory` (`ServicioFabricaRobots.kt`) ya usa `OSPlayground/FabricaRobots`, y este plan no debe cambiar ese valor:
 
-- `OSPlayground/ProcessLab` para `Robot Factory`.
-- `OSPlayground/BinderIPC` para `Restaurant IPC`.
-- `OSPlayground/SocketLab` para `Agent Network`.
-- `OSPlayground/ThreadRace` para `Thread Race`.
-- `OSPlayground/ChaosBank` para `Chaos Bank`.
-- `OSPlayground/Mutex` para `Ticket Rush`.
-- `OSPlayground/Semaphore` para `Smart Parking`.
-- `OSPlayground/Memory` para `Memory Monster`.
+- `OSPlayground/FabricaRobots` para `Robot Factory` (`ServicioFabricaRobots.kt`).
+- `OSPlayground/BinderIPC` para `Restaurant IPC` (`ContratoRestauranteIpc.TAG_LOGCAT`).
+- `OSPlayground/SocketLab` para `Agent Network` (`TAG_RED_AGENTES`).
+- `OSPlayground/ThreadRace` para `Thread Race` (`TAG_CARRERA_HILOS`).
+- `OSPlayground/ChaosBank` para `Chaos Bank` (`TAG_BANCO_CAOTICO`).
+- `OSPlayground/Mutex` para `Ticket Rush` (`TAG_CARRERA_BOLETOS`).
+- `OSPlayground/Semaphore` para `Smart Parking` (`TAG_PARQUEO_INTELIGENTE`).
+- `OSPlayground/Memory` para `Memory Monster` (`TAG_MONSTRUO_MEMORIA`).
 
 La pantalla de diagnostico solo documenta estos tags. No debe crear un logger global.
 
@@ -432,7 +469,7 @@ Los experimentos conservan sus metricas reales propias. Este plan no debe conver
 ## Ciclo de vida
 
 - Al entrar a diagnosticos: cargar datos estaticos locales.
-- Al copiar comando: escribir el texto del comando en clipboard y mostrar feedback visual breve si el patron existente lo permite.
+- Al copiar comando: escribir el texto del comando en clipboard mediante `ClipEntry`/`ClipData`. El patron ya establecido en los 8 experimentos (por ejemplo `ComoVerificarParqueoInteligente`, `ComoVerificarMonstruoMemoria`) no muestra Snackbar ni Toast de confirmacion; el boton `Copiar` es la unica retroalimentacion. `ListaComandosVerificacion.kt` sigue el mismo patron, sin agregar Snackbar/Toast nuevo.
 - Al salir: no hay recursos tecnicos que liberar.
 - Al recomponer: no duplicar listas ni eventos.
 
@@ -453,10 +490,13 @@ No ejecutar build automaticamente. Si un agente necesita compilar, debe pedir ap
 
 Verificaciones manuales permitidas para revisar archivos sin build:
 
+El comodin recursivo `**` no es fiable con `Select-String -Path` en Windows PowerShell 5.1 (version documentada del entorno del usuario): omite archivos en subcarpetas de forma inconsistente. Usar `Get-ChildItem -Recurse` explicito y pasar la lista de rutas resultante:
+
 ### Buscar comandos incompatibles con Windows
 
 ```powershell
-Select-String -Path android/app/src/main/java/io/yerdna/architecturasos/**/*.kt,android/app/src/main/res/values/strings.xml -Pattern "grep "
+$archivosKt = (Get-ChildItem -Path app/src/main/java/io/yerdna/architecturasos -Recurse -Filter *.kt).FullName
+Select-String -Path ($archivosKt + "app/src/main/res/values/strings.xml") -Pattern "grep "
 ```
 
 Debe no devolver comandos visibles nuevos con `grep`. Si aparece texto heredado, reemplazarlo por `findstr` o por `adb logcat -d -s TAG`.
@@ -464,7 +504,8 @@ Debe no devolver comandos visibles nuevos con `grep`. Si aparece texto heredado,
 ### Revisar botones manuales de limpieza de logs
 
 ```powershell
-Select-String -Path android/app/src/main/java/io/yerdna/architecturasos/**/*.kt,android/app/src/main/res/values/strings.xml -Pattern "Limpiar|Clear"
+$archivosKt = (Get-ChildItem -Path app/src/main/java/io/yerdna/architecturasos -Recurse -Filter *.kt).FullName
+Select-String -Path ($archivosKt + "app/src/main/res/values/strings.xml") -Pattern "Limpiar|Clear"
 ```
 
 Debe no mostrar un boton manual de limpieza del registro de eventos. Puede existir una funcion interna `limpiar()` del logger si no es visible como accion manual.
@@ -472,7 +513,7 @@ Debe no mostrar un boton manual de limpieza del registro de eventos. Puede exist
 ### Revisar tags Logcat documentados
 
 ```powershell
-Select-String -Path android/app/src/main/java/io/yerdna/architecturasos/**/*.kt -Pattern "OSPlayground/"
+Get-ChildItem -Path app/src/main/java/io/yerdna/architecturasos -Recurse -Filter *.kt | Select-String -Pattern "OSPlayground/"
 ```
 
 Debe mostrar tags estables por experimento y no un tag global ambiguo.
@@ -485,7 +526,7 @@ Ejecutar desde una terminal externa cuando la app este instalada:
 adb devices
 adb shell ps -A | findstr architecturasos
 adb shell top
-adb logcat -d -s OSPlayground/ProcessLab OSPlayground/BinderIPC OSPlayground/SocketLab OSPlayground/ThreadRace OSPlayground/ChaosBank OSPlayground/Mutex OSPlayground/Semaphore OSPlayground/Memory
+adb logcat -d -s OSPlayground/FabricaRobots OSPlayground/BinderIPC OSPlayground/SocketLab OSPlayground/ThreadRace OSPlayground/ChaosBank OSPlayground/Mutex OSPlayground/Semaphore OSPlayground/Memory
 adb shell dumpsys meminfo io.yerdna.architecturasos
 adb shell dumpsys activity services | findstr architecturasos
 ```
@@ -524,7 +565,7 @@ Interpretacion:
 
 ## Checklist de implementacion
 
-- [ ] Revisar estructura real de `android/app/src/main/java/io/yerdna/architecturasos/`.
+- [ ] Revisar estructura real de `app/src/main/java/io/yerdna/architecturasos/`.
 - [ ] Confirmar nombres reales de pantallas existentes antes de editar.
 - [ ] Crear modelos simples de diagnostico.
 - [ ] Crear repositorio estatico de diagnostico.
@@ -541,60 +582,22 @@ Interpretacion:
 - [ ] Ejecutar verificaciones de busqueda con `Select-String`.
 - [ ] Pedir aprobacion antes de cualquier build o test Gradle.
 
-## Bloqueos, contradicciones y ambiguedades restantes
+## Decisiones resueltas
 
-### 1. Punto: nombres reales y rutas de las pantallas de experimentos
+- **Raiz real del proyecto**: no existe carpeta `android/`; todas las rutas de archivo y comandos `gradlew.bat`/`Select-String` se ejecutan desde la raiz del repositorio (ver "Estructura real del proyecto (corregida)").
+- **Nombres reales y rutas de las pantallas de experimentos**: verificados directamente contra `app/src/main/java/io/yerdna/architecturasos/ui/screen/`. El dashboard real es `PantallaPanelExperimentos.kt` (no `PantallaDashboard.kt`; no existe carpeta `ui/dashboard/`). Los 8 experimentos son `PantallaFabricaRobots.kt`, `PantallaRestauranteIpc.kt`, `PantallaRedAgentes.kt`, `PantallaCarreraHilos.kt`, `PantallaBancoCaotico.kt` (no `PantallaBancoCaos.kt`), `PantallaCarreraBoletos.kt` (no `PantallaCarreraTickets.kt`), `PantallaParqueoInteligente.kt` (no `PantallaEstacionamientoInteligente.kt`) y `PantallaMonstruoMemoria.kt`. Los nombres nuevos de este plan (`HerramientaDiagnostico`, `RepositorioDiagnosticoSistema`, `PantallaDiagnosticoSistema`, `ListaComandosVerificacion`) usan el paquete `diagnostico` (singular, espanol), no `diagnostics`.
+- **Estado real de implementacion de los planes 001 a 011**: verificado que los planes `001` a `009` y `011-panel-registro-eventos.md` ya estan implementados en el codigo actual (los 8 modulos, el dashboard, la navegacion y el logger comun existen y compilan). El plan 010 no necesita detenerse por dependencias faltantes.
+- **Componente comun de comandos copiables**: verificado que no existe ningun componente equivalente reusable; cada pantalla define su propio `ComoVerificarX` privado con su propia `data class ComandoVerificacionX`. Se crea `ListaComandosVerificacion.kt` como componente nuevo, usado unicamente por `PantallaDiagnosticoSistema.kt`. Este plan no refactoriza los `ComoVerificarX` existentes de los 8 experimentos.
+- **Boton `Limpiar` heredado**: aplicada la decision de `lessons.md` #34/#37: ninguna pantalla muestra boton manual de limpieza de registro. `limpiar()` sigue siendo API interna del logger, invocada solo al iniciar una ejecucion nueva.
+- **Comandos de tracing por version de Android**: `Perfetto/System Trace` es la unica `HerramientaDiagnostico` de categoria `TRACING`; `atrace` se documenta dentro de su campo `limitacion` como alternativa cuando este disponible, no como tarjeta separada. Total de herramientas: exactamente 10.
+- **Comparacion con otro sistema operativo**: se incluye dentro de `PantallaDiagnosticoSistema` una comparacion breve Android vs Linux en procesos, IPC y diagnostico (contenido estatico, sin dependencias nuevas). La comparacion extensa pertenece al informe externo, no al codigo.
+- **Ejecucion de verificaciones Gradle**: `build` y `test` quedan como verificacion opcional bajo aprobacion explicita del usuario. La implementacion normal usa `Select-String`/`Get-ChildItem` y pruebas manuales de UI/ADB, sin iniciar Gradle automaticamente.
+- **Titulo visible de la pantalla**: `System Diagnostics` es solo el nombre de referencia en ingles de este plan (coincide con `docs/app-requirements.md` y con la convencion de nombres de archivo de plan en ingles, igual que `009-memory-monster-memory.md` para "Monstruo de Memoria"). El texto visible en la UI y en `strings.xml` es en espanol: `Diagnostico del Sistema`.
+- **Tag Logcat real de `Robot Factory`**: el codigo ya implementado usa `OSPlayground/FabricaRobots` (`ServicioFabricaRobots.kt:203`), no `OSPlayground/ProcessLab` (que es solo un ejemplo generico en `docs/app-requirements.md`). Este plan documenta el valor real sin modificar el codigo existente.
+- **Entrada del dashboard**: se agrega reutilizando el modelo `ExperimentoResumen` y el componente `TarjetaExperimento` ya existentes en `PantallaPanelExperimentos.kt`, con `icono = "SD"` y `colorIcono = Color(0xFF495057)` (color no usado por ninguna tarjeta existente), sin crear un modelo ni tarjeta nueva.
+- **Navegacion**: la app ya usa Navigation Compose; se agrega `Navegacion.Ruta.Diagnosticos` y un `composable(...)` en `App.kt` exactamente con el mismo patron que las 8 rutas existentes, sin condicionales ni mecanismo alternativo.
+- **Retroalimentacion al copiar comando**: sigue el patron ya establecido en los 8 experimentos (sin Snackbar ni Toast); el boton `Copiar` es la unica retroalimentacion.
 
-Por que bloquea o puede causar implementaciones distintas:
-Los planes y requisitos usan nombres conceptuales y algunos nombres propuestos en espanol, pero la estructura real de los planes anteriores puede haber creado rutas distintas. Si un agente crea los archivos propuestos sin revisar los existentes, puede duplicar pantallas o dejar la navegacion apuntando a clases incorrectas.
+## Bloqueos restantes
 
-Solucion concreta alineada:
-Antes de implementar, revisar `android/app/src/main/java/io/yerdna/architecturasos/` con `rg --files` y usar los nombres reales existentes. Si difieren, modificar las pantallas reales y mantener solo los nombres nuevos de este plan en espanol: `HerramientaDiagnostico`, `RepositorioDiagnosticoSistema`, `PantallaDiagnosticoSistema` y `ListaComandosVerificacion`.
-
-### 2. Punto: estado real de implementacion de los planes 001 a 009
-
-Por que bloquea o puede causar implementaciones distintas:
-Este plan depende de que existan dashboard, navegacion, componentes comunes, logger y los 8 experimentos. Si alguno falta, un agente podria intentar completar funcionalidades de modulos anteriores dentro del plan 010, ampliando el alcance y rompiendo la regla de trabajar plan por plan.
-
-Solucion concreta alineada:
-Al iniciar implementacion, verificar presencia de archivos y pantallas de los planes 001 a 009. Si faltan dependencias funcionales, detener este plan y pedir al usuario completar o aprobar el plan correspondiente. El plan 010 solo puede agregar diagnosticos y pulir verificacion de archivos ya existentes.
-
-### 3. Punto: componente comun de comandos copiables
-
-Por que bloquea o puede causar implementaciones distintas:
-El plan pide crear `ListaComandosVerificacion.kt` solo si no existe equivalente. Si existe un componente con otro nombre, crear uno nuevo duplicaria UI y responsabilidades.
-
-Solucion concreta alineada:
-Buscar primero componentes existentes relacionados con `Comando`, `Verificacion`, `HowToVerify` o `ComoVerificar`. Si existe uno reusable, extenderlo manteniendo su estilo. Si no existe, crear `ListaComandosVerificacion.kt` con responsabilidad visual simple y sin ejecutar comandos.
-
-### 4. Punto: textos visibles heredados con boton `Limpiar`
-
-Por que bloquea o puede causar implementaciones distintas:
-`docs/app-requirements.md` menciona boton para limpiar logs, pero `plans/lessons.md` lo corrige: ninguna pantalla debe mostrar limpieza manual. Si un agente sigue solo el requerimiento original, agregaria o conservaria una accion visible ya descartada.
-
-Solucion concreta alineada:
-Aplicar la decision mas reciente de `lessons.md`: eliminar o no crear botones visibles `Limpiar` para registros de eventos. Mantener `limpiar()` solo como API interna del logger o del ciclo de vida cuando una nueva ejecucion de experimento deba iniciar con buffer nuevo.
-
-### 5. Punto: comandos de tracing disponibles por version Android
-
-Por que bloquea o puede causar implementaciones distintas:
-Perfetto, System Trace, systrace y atrace no estan disponibles igual en todos los entornos. Si se documenta un unico comando obligatorio, puede fallar durante la exposicion segun emulador, version de Android o Android Studio.
-
-Solucion concreta alineada:
-Documentar `Thread Race` como escenario de carga para tracing y explicar que la herramienta concreta se selecciona segun disponibilidad: Android Studio Profiler/System Trace o Perfetto primero; `atrace` solo cuando este disponible. No exigir que la app ejecute esas herramientas.
-
-### 6. Punto: comparacion con otro sistema operativo
-
-Por que bloquea o puede causar implementaciones distintas:
-La rubrica del PDF exige comparar Android con al menos un sistema operativo adicional en al menos 3 aspectos, pero los requisitos de app no dicen si esa comparacion debe vivir dentro de la aplicacion, informe o ambos.
-
-Solucion concreta alineada:
-Para este plan, incluir en `PantallaDiagnosticoSistema` una comparacion breve Android vs Linux en procesos, IPC y diagnostico, porque es contenido estatico, no agrega dependencias y ayuda a cubrir la exposicion. La comparacion extensa y citas APA pertenecen al informe externo, no al codigo.
-
-### 7. Punto: ejecucion de verificaciones Gradle
-
-Por que bloquea o puede causar implementaciones distintas:
-El plan original ordenaba ejecutar `build` y `test`, pero el usuario indico no ejecutar build y `lessons.md` exige pedir confirmacion antes. Un agente podria ejecutar comandos no autorizados.
-
-Solucion concreta alineada:
-Mantener `build` y `test` como verificacion opcional bajo aprobacion explicita. Para la implementacion normal de este plan, usar revisiones estaticas con `Select-String` y pruebas manuales de UI/ADB descritas, sin iniciar Gradle automaticamente.
+Ninguno. No queda ninguna decision abierta que requiera respuesta del usuario antes de implementar este plan.

@@ -7,13 +7,13 @@ import androidx.navigation.compose.rememberNavController
 import io.yerdna.architecturasos.ui.screen.PantallaBancoCaotico
 import io.yerdna.architecturasos.ui.screen.PantallaCarreraBoletos
 import io.yerdna.architecturasos.ui.screen.PantallaCarreraHilos
-import io.yerdna.architecturasos.ui.screen.PantallaExperimentoTemporal
+import io.yerdna.architecturasos.ui.screen.PantallaDiagnosticoSistema
 import io.yerdna.architecturasos.ui.screen.PantallaFabricaRobots
+import io.yerdna.architecturasos.ui.screen.PantallaMonstruoMemoria
 import io.yerdna.architecturasos.ui.screen.PantallaPanelExperimentos
 import io.yerdna.architecturasos.ui.screen.PantallaParqueoInteligente
 import io.yerdna.architecturasos.ui.screen.PantallaRedAgentes
 import io.yerdna.architecturasos.ui.screen.PantallaRestauranteIpc
-import io.yerdna.architecturasos.ui.screen.obtenerExperimentoPorRuta
 
 @Composable
 fun AplicacionOSPlayground() {
@@ -67,8 +67,12 @@ fun AplicacionOSPlayground() {
             )
         }
         composable(Navegacion.Ruta.MonstruoMemoria) {
-            PantallaExperimentoTemporal(
-                experimento = obtenerExperimentoPorRuta(Navegacion.Ruta.MonstruoMemoria),
+            PantallaMonstruoMemoria(
+                onVolver = { navController.popBackStack() }
+            )
+        }
+        composable(Navegacion.Ruta.Diagnosticos) {
+            PantallaDiagnosticoSistema(
                 onVolver = { navController.popBackStack() }
             )
         }
