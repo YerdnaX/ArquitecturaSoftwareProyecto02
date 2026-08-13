@@ -10,6 +10,7 @@ import io.yerdna.architecturasos.ui.screen.PantallaCarreraHilos
 import io.yerdna.architecturasos.ui.screen.PantallaExperimentoTemporal
 import io.yerdna.architecturasos.ui.screen.PantallaFabricaRobots
 import io.yerdna.architecturasos.ui.screen.PantallaPanelExperimentos
+import io.yerdna.architecturasos.ui.screen.PantallaParqueoInteligente
 import io.yerdna.architecturasos.ui.screen.PantallaRedAgentes
 import io.yerdna.architecturasos.ui.screen.PantallaRestauranteIpc
 import io.yerdna.architecturasos.ui.screen.obtenerExperimentoPorRuta
@@ -61,8 +62,7 @@ fun AplicacionOSPlayground() {
             )
         }
         composable(Navegacion.Ruta.ParqueoInteligente) {
-            PantallaExperimentoTemporal(
-                experimento = obtenerExperimentoPorRuta(Navegacion.Ruta.ParqueoInteligente),
+            PantallaParqueoInteligente(
                 onVolver = { navController.popBackStack() }
             )
         }
