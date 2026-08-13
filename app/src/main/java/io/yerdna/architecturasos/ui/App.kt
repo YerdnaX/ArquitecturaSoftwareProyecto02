@@ -4,8 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import io.yerdna.architecturasos.ui.screen.PantallaExperimentoTemporal
+import io.yerdna.architecturasos.ui.screen.PantallaBancoCaotico
 import io.yerdna.architecturasos.ui.screen.PantallaCarreraHilos
+import io.yerdna.architecturasos.ui.screen.PantallaExperimentoTemporal
 import io.yerdna.architecturasos.ui.screen.PantallaFabricaRobots
 import io.yerdna.architecturasos.ui.screen.PantallaPanelExperimentos
 import io.yerdna.architecturasos.ui.screen.PantallaRedAgentes
@@ -49,8 +50,7 @@ fun AplicacionOSPlayground() {
             )
         }
         composable(Navegacion.Ruta.BancoCaotico) {
-            PantallaExperimentoTemporal(
-                experimento = obtenerExperimentoPorRuta(Navegacion.Ruta.BancoCaotico),
+            PantallaBancoCaotico(
                 onVolver = { navController.popBackStack() }
             )
         }
