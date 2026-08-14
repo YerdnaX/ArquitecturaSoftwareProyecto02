@@ -43,16 +43,23 @@ class EjecutorCarreraBoletos(
 
         val config = configuracion.normalizada()
         val inicio = SystemClock.elapsedRealtime()
+        // Todos los compradores comparten la misma cantidad de boletos.
         val recurso = RecursoBoletos(config.boletosIniciales)
+
+        // Este lock funciona como mutex: permite que solo un comprador a la vez
+        // ejecute la sección crítica cuando se selecciona el modo ConMutex.
         val lock = ReentrantLock()
         val ventasRegistradas = AtomicInteger(0)
         val ventasIncorrectasReportadas = AtomicInteger(0)
 
         publicarMetricas(idEjecucion, modo, config, recurso, ventasRegistradas.get(), inicio)
 
+        // Se crea un Thread por comprador. Todos reciben el mismo recurso y el mismo lock.
         repeat(config.compradoresTotales) { indice ->
             val idComprador = indice + 1
             val nombre = "CarreraBoletos-$idEjecucion-$idComprador"
+            // Esta lambda es el trabajo del hilo. Al comenzar, decide si compra
+            // usando la versión protegida o la versión que provoca la carrera.
             val hilo = Thread({
                 try {
                     if (modo == ModoCarreraBoletos.ConMutex) {
@@ -112,10 +119,13 @@ class EjecutorCarreraBoletos(
             hilos.add(hilo)
         }
 
+        // start() pone en ejecución concurrente a todos los compradores.
         hilos.forEach { it.start() }
 
+        // El coordinador espera a todos los compradores antes de crear el resultado final.
         coordinador = Thread({
             try {
+                // join() espera a cada hilo sin detener el hilo principal de la interfaz.
                 hilos.forEach { it.join() }
                 if (cancelada.get()) {
                     publicar { callbacks.onCancelada(idEjecucion) }
@@ -191,7 +201,11 @@ class EjecutorCarreraBoletos(
         publicarIntento(idEjecucion, idComprador, nombre)
         publicarSeccionCritica(idEjecucion, idComprador, nombre, config, ModoCarreraBoletos.SinMutex, recurso, ventasRegistradas.get(), inicio)
 
+        // Sin mutex, varios compradores pueden leer la misma cantidad disponible.
         val boletosLeidos = recurso.boletosDisponibles
+
+        // La pausa permite que otros hilos lean antes de que este comprador escriba,
+        // aumentando la posibilidad de vender el mismo boleto más de una vez.
         Thread.sleep(PAUSA_CARRERA_MS)
         if (cancelada.get()) return
 
@@ -238,6 +252,8 @@ class EjecutorCarreraBoletos(
         }
         publicarMetricas(idEjecucion, ModoCarreraBoletos.ConMutex, config, recurso, ventasRegistradas.get(), inicio)
 
+        // withLock adquiere el mutex antes de entrar y lo libera automáticamente al salir.
+        // Mientras un comprador está aquí, los demás deben esperar.
         lock.withLock {
             if (cancelada.get()) return
 

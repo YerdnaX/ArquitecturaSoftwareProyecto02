@@ -36,16 +36,25 @@ class EjecutorBancoCaotico(
 
         val config = configuracion.normalizada()
         val inicio = SystemClock.elapsedRealtime()
+        // Existe un solo saldo para todos los cajeros. Al no estar protegido, varios
+        // hilos pueden leerlo y escribirlo al mismo tiempo.
         var saldoCompartido = config.saldoInicial
 
+        // El ExecutorService crea y administra un grupo fijo de hilos. En este ejemplo
+        // el grupo tiene la misma cantidad de hilos que cajeros participantes.
         val executor = Executors.newFixedThreadPool(config.cantidadCajeros)
         executorService = executor
+
+        // Cada Future representa una tarea de cajero y luego permite esperar su finalización.
         val futures = mutableListOf<Future<*>>()
 
+        // Se prepara y envía una tarea independiente por cada cajero.
         repeat(config.cantidadCajeros) { indice ->
             val idCajero = indice + 1
             val nombre = "BancoCaotico-$idEjecucion-$idCajero"
             futures.add(
+                // submit() entrega el trabajo al grupo. No hace falta llamar a start(),
+                // porque el ExecutorService asigna un hilo y comienza la tarea.
                 executor.submit {
                     try {
                         publicar {
@@ -68,7 +77,12 @@ class EjecutorBancoCaotico(
                             operacionesCompletadas < config.operacionesPorCajero &&
                             !cancelada.get()
                         ) {
+                            // Sección crítica sin protección: leer, calcular y escribir son
+                            // pasos separados. Otro cajero puede entrar entre cualquiera de ellos.
                             val saldoLeido = saldoCompartido
+
+                            // yield() facilita que otro hilo se ejecute después de la lectura,
+                            // haciendo más visible la condición de carrera durante la demostración.
                             Thread.yield()
                             val saldoNuevo = saldoLeido + config.montoPorOperacion
                             saldoCompartido = saldoNuevo
@@ -133,12 +147,16 @@ class EjecutorBancoCaotico(
             )
         }
 
+        // El coordinador espera las tareas y calcula el resultado cuando todas terminan.
         coordinador = Thread({
             try {
+                // Future.get() cumple aquí una función parecida a join(): espera una tarea.
                 futures.forEach { it.get() }
                 if (cancelada.get()) {
                     publicar { callbacks.onCancelada(idEjecucion) }
                 } else {
+                    // El valor esperado supone que ninguna actualización se perdió.
+                    // Si el saldo real es distinto, se comprobó la condición de carrera.
                     val esperado = config.saldoInicial +
                         (config.cantidadCajeros * config.operacionesPorCajero * config.montoPorOperacion)
                     val real = saldoCompartido

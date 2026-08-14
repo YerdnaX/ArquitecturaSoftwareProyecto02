@@ -32,8 +32,13 @@ class EjecutorCarreraHilos(
         fun onError(idEjecucion: Int, idHilo: Int, mensaje: String?, throwable: Throwable?)
     }
 
+    // El Handler permite enviar a la interfaz los cambios producidos por los hilos trabajadores.
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    // Todos los hilos consultan esta bandera para saber si deben detener su trabajo.
     private val cancelada = AtomicBoolean(false)
+
+    // Aquí se guardan los Thread creados para poder iniciarlos, esperarlos y cancelarlos.
     private val hilos = mutableListOf<Thread>()
     private var coordinador: Thread? = null
 
@@ -47,6 +52,8 @@ class EjecutorCarreraHilos(
         val inicioTotal = SystemClock.elapsedRealtime()
         val operacionesPorHilo = operacionesPorHiloCarrera(config.cantidadTrabajo)
 
+        // Se crea un objeto Thread por cada participante. La lambda entregada a Thread
+        // indica que ejecutarHilo() será el trabajo que realizará cuando se llame a start().
         repeat(config.cantidadHilos) { indice ->
             val idHilo = indice + 1
             val nombreHilo = "ThreadRace-$idEjecucion-$idHilo"
@@ -61,10 +68,13 @@ class EjecutorCarreraHilos(
             hilos.add(hilo)
         }
 
+        // Crear un Thread no lo pone a trabajar. start() inicia cada hilo de verdad.
         hilos.forEach { it.start() }
 
+        // Este hilo adicional no hace cálculos: coordina la carrera y espera a los trabajadores.
         coordinador = Thread({
             try {
+                // join() bloquea solamente al coordinador hasta que todos los hilos terminen.
                 hilos.forEach { it.join() }
                 val tiempoTotalMs = SystemClock.elapsedRealtime() - inicioTotal
                 val estadoFinal = if (cancelada.get()) {
@@ -131,6 +141,8 @@ class EjecutorCarreraHilos(
         }
 
         try {
+            // El trabajo se divide en bloques para no intentar actualizar la pantalla
+            // después de cada una de las millones de operaciones realizadas.
             while (completadas < operacionesTotales && !cancelada.get()) {
                 val limiteBloque = (completadas + TAMANO_BLOQUE).coerceAtMost(operacionesTotales)
                 while (completadas < limiteBloque) {
